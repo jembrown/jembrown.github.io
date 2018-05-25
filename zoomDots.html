@@ -12,15 +12,15 @@
         	var h = 800;
         	var numDots = 1000;
         	
-        	function randRGBs(colorNum){
-        		var colors = [];
+        	function randRGB(){
+        		var color = "";
         		for (var i = 0; i < colorNum; i++){
         			var rVal = Math.random()*255;
         			var gVal = Math.random()*255;
         			var bVal = Math.random()*255;
-        			colors.push("rgb(" + rVal + "," + gVal + "," + bVal + ")");
+        			color = "rgb(" + rVal + "," + gVal + "," + bVal + ")");
         		}
-        		return colors;
+        		return color;
         	}
         	
         	var dots = [];
@@ -51,7 +51,7 @@
 				   return Math.floor(Math.random() * 20);
 			   })
 			   .attr("fill",function(){
-			       return randRGBs(1);
+			       return randRGB();
 			   });
 					   
 			d3.select("svg")
