@@ -14,9 +14,9 @@
         	
         	function randRGB(){
         		var color = "";
-        		var rVal = Math.random()*255;
-        		var gVal = Math.random()*255;
-        		var bVal = Math.random()*255;
+        		var rVal = Math.floor(Math.random()*255);
+        		var gVal = Math.floor(Math.random()*255);
+        		var bVal = Math.floor(Math.random()*255);
         		color = "rgb(" + rVal + "," + gVal + "," + bVal + ")";
         		return color;
         	}
