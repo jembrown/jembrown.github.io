@@ -71,7 +71,8 @@
  				var brl = parseFloat(d3.select("#brlSlider").property("value"));
 				myCharHistory.sampleHistory(brl);
 				var plotSvg = d3.select("#histories").append("svg");
-				myCharHistory.drawHistory(brl,w=800,h=30,svg=plotSvg);		
+				myCharHistory.drawHistory(brl,w=800,h=30,svg=plotSvg);
+				d3.select("#histories").append("br");
  			});
 
 		</script>
