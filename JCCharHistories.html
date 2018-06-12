@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Jukes-Cantor Character Histories</title>
+        
+        <!-- d3 library for data visualization and animation -->
+        <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+
+        <!-- jstat library for probability distributions -->
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+        
+        <!-- phyleaux library for phylogenetic objects and functions -->
+        <script type="text/javascript" src="https://jembrown.github.io/phyleaux.js"></script>
+        
+		<style type="text/css">
+        	
+        	@font-face { font-family: Glober; font-weight: semibold; src: url('Glober-SemiBold.otf'); }
+        	        	
+        	h1 {
+        		font-family: Glober;
+        		font-size: 24px;
+        	}
+        	        	
+        	p {
+        		font-family: Glober;
+        		font-size: 14px;
+        	}
+        	        	
+        </style>
+        <script>
+        	function showValue(val){
+    			document.getElementById("brl").innerHTML=val;
+    		}
+		</script>
+    </head>
+    <body>
+    	
+    	<h1>Jukes-Cantor Character Histories</h1>
+    	
+    	<p>
+    
+			Current Branch Length: <span id="brl" style="color:black;"></span><br><br>
+			0.0<input type="range" min="0.0" max="20.0" step="0.01" id="brlSlider" onchange="showValue(this.value);">20.0
+		
+			<br><br>
+		
+			<button id="drawCharHist"
+					style="display: inline-block; text-align: right">Draw Character History
+			</button>
+
+			<br>
+ 		
+ 		</p>
+ 		
+    	<script>
+    
+ 			d3.select("#brlSlider").property("value",2.0);
+ 			showValue(2.0);
+ 			
+ 			var myModel = new Model(bf=[0.25,0.25,0.25,0.25],
+ 									rates=[1,1,1,1,1,1],
+ 									gammaRates=true,
+ 									alpha=10,
+ 									invSites=false,
+ 									i=0);
+ 			
+ 			var myCharHistory = new characterHistory(model=myModel);
+ 			
+ 			d3.select("#drawCharHist").on("click",function(){
+ 				var brl = parseFloat(d3.select("#brlSlider").property("value"));
+				myCharHistory.sampleHistory(brl);
+				var plotSvg = d3.select("#histories").append("svg");
+				myCharHistory.drawHistory(brl,w=800,h=30,svg=plotSvg);		
+ 			});
+
+		</script>
+ 			
+ 		<p>
+			Set the branch length using the slider. Each time you click the "Draw Character History" button, a history of
+			character change will be recorded below. Colors correspond to different nucleotide states (A, C, G, and T). In the Jukes-Cantor model, nucleotides behave
+			equivalently, so the assignment of colors is arbitrary.	
+ 		</p>
+ 			
+ 		<section id="histories">
+ 			
+ 		<p>Character History Record:</p>
+ 			
+ 		</section>
+ 		
+ 		<br><br><br><br>
+ 		
+ 		<section id="pageCredits">
+ 			<p>
+				<img width=100 height=100 src="https://raw.githubusercontent.com/jembrown/websiteImages/master/ssb.png">
+				<br><br>
+				Development of the Phyleaux Javascript Library and related interactive phylogenetics tools is supported by the Society of Systematic Biologists.
+				<br><br>
+				Comments and bug reports should be directed to jembrown@lsu.edu.
+ 			</p>
+ 		</section>
+    </body>
+</html>
+
