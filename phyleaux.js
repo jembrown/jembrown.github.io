@@ -1,4 +1,4 @@
-// phyleaux.js (a1)
+// phyleaux.js (a2)
 // Jeremy M. Brown
 // jembrown@lsu.edu
 // A library for phylogenetic illustrations and animations
@@ -6,6 +6,146 @@
 
 
 // ---------------- ** Classes ** ----------------
+
+// Class to store the states and waiting times for a single character history
+
+class characterHistory {
+
+	constructor(model){
+		this.model = model;
+		this.states = [];
+		this.waitingTimes = [];
+	}
+	
+	sampleHistory(brl,startState=null){
+		this.states = [];
+		this.waitingTimes = [];
+		if (startState != null){
+			this.states = [startState];
+		} else {
+			this.states = [multiDraw(["A","C","G","T"],this.model.bf)];
+		}
+		while (sum(this.waitingTimes) < brl){
+			this.waitingTimes.push(this.model.drawWaitingTime(this.states[this.states.length-1]));
+			if (sum(this.waitingTimes) < brl){
+				this.states.push(this.model.drawNewState(this.states[this.states.length-1]));
+			}
+		}
+	}
+	
+	drawHistory(brl,w,h,svg=null,colors=["#ff0000","#3cb371","#ffa500","#0000ff"],id="charHistSVG"){
+		if (svg === null){
+			svg = d3.select("body")
+					.append("svg")
+					.attr("width",w)
+					.attr("height",h)
+					.attr("id",id);
+		} else {
+			svg.attr("width",w)
+			   .attr("height",h)
+			   .attr("id",id);
+		}
+		
+		var states = this.states;
+		var waitingTimes = this.waitingTimes;
+		var model = this.model;
+		
+		// Can't access the characterHistory object with "this" inside for loop
+		var currX = 0;
+		var waitTimeSum = 0;
+		for (var i = 0; i < states.length; i++){
+			svg.append("line")
+			  .attr("stroke",colors[model.findStateIndex(states[i])])
+			  .attr("stroke-width",25)
+			  .attr("x1",function(){
+			  		if (i === 0){
+			  			return 0;
+			  		} else {
+			  			return currX;
+			  		}
+			  })
+			  .attr("x2",function(){
+			  		if (i === (states.length-1)){
+			  			currX = w;
+			  			return w;
+			  		} else {
+			  			waitTimeSum += waitingTimes[i];
+			  			currX = ((waitTimeSum/brl) * w);
+			  			return currX;
+			  		}
+			  })
+			  .attr("y1",h/2)
+			  .attr("y2",h/2)
+ 
+		}
+	}
+}
+
+// Class for a GTR-class model of nucleotide sequence evolution
+
+class Model {
+
+	// Hmmmm...should this class contain just one site along one lineage...or many sites...or a tree?
+
+	constructor(bf,rates,gammaRates=true,alpha,invSites=false,i,state="A"){
+		this.bf = bf;
+		this.rates = rates;
+		this.alpha = alpha;
+		this.i = i;
+		this.r = this.buildRateMatrix();
+	}
+	
+	// Function creates the instantaneous rate matrix from the base frequency and relative rate values
+	buildRateMatrix(){
+	
+		// Calculate diagonal elements of rate matrix
+		var Adiag = -1*((rates[0]*bf[1]) + (rates[1]*bf[2]) + (rates[2]*bf[3]));
+		var Cdiag = -1*((rates[0]*bf[0]) + (rates[3]*bf[2]) + (rates[4]*bf[3]));
+		var Gdiag = -1*((rates[1]*bf[0]) + (rates[3]*bf[1]) + (rates[5]*bf[3]));
+		var Tdiag = -1*((rates[2]*bf[0]) + (rates[4]*bf[1]) + (rates[5]*bf[2]));
+		
+		// Calculate the normalizing factor so that the negative average of the diagonals is 1
+		var norm = -1 * mean([Adiag,Cdiag,Gdiag,Tdiag]);
+		
+		// Calculate and return the full matrix as a 2D array (4x4 matrix)
+		return [[Adiag/norm,			(rates[0]*bf[1])/norm, (rates[1]*bf[2])/norm, (rates[2]*bf[3])/norm],
+				[(rates[0]*bf[0])/norm, Cdiag/norm, 		   (rates[3]*bf[2])/norm, (rates[4]*bf[3])/norm],
+				[(rates[1]*bf[0])/norm, (rates[3]*bf[1])/norm, Gdiag/norm,			  (rates[5]*bf[3])/norm],
+				[(rates[2]*bf[0])/norm, (rates[4]*bf[1])/norm, (rates[5]*bf[2])/norm, Tdiag/norm]];
+	}
+	
+	drawNewState(currentState){
+		var rateVec = this.r[this.findStateIndex(currentState)];
+		var offDiagSum = 0;
+		var states = ["A","C","G","T"];
+		states.splice(states.indexOf(currentState),1);
+		var probs = [];
+		for (var i = 0; i < rateVec.length; i++){
+			if (rateVec[i] > 0){
+				offDiagSum += rateVec[i];
+			}
+		}
+		for (var j = 0; j < rateVec.length; j++){
+			if (rateVec[j] > 0){
+				probs.push(rateVec[j]/offDiagSum);
+			}
+		}
+		return multiDraw(states,probs);
+	}
+	
+	drawWaitingTime(currentState){
+		var stateIndex = this.findStateIndex(currentState);
+		var time = rexp(-1 * this.r[stateIndex][stateIndex]);
+		return time;
+	}
+	
+	findStateIndex(st){
+		if (st === "A"){ return 0; }
+		else if (st === "C"){ return 1; }
+		else if (st === "G"){ return 2; }
+		else if (st === "T"){ return 3; }
+	}
+}
 
 // Class for nodes in a phylogenetic tree
 
@@ -282,6 +422,9 @@ class AnimatedLTT{
 	}
 }
 
+// ---------- ** Aliases for Probability Functions ** ----------
+
+var rexp = jStat.exponential.sample;
 
 // ---------------- ** Functions ** ----------------
 
@@ -362,28 +505,40 @@ function countLineages(node,xVal,count){
 
 // --------------------------------------------------
 
-// Function to plot a cladogram, if appropriate x and y values available
+// Utility function to count the number of a particular state (st) in an array (arr)
+
+function countStateInArray(st,arr){
+	var count = 0;
+	for (var i = 0; i < arr.length; i++){
+		if (arr[i] == st){
+			count++;
+		}
+	}
+	return count;
+}
+
+// --------------------------------------------------
+
+// Function to plot a cladogram
 // w and h are the width and height of the new svg
 // lwd is line width
 // tipLabels is bool to specify whether or not tips should be labeled
 
-// Make member function of tree?
-function drawCladogram(tr,w,h,color="black",lwd=4,tipLabels=false){
-
+Tree.prototype.drawCladogram = function(w,h,color="black",lwd=4,scale=0.9,padding=30,tipLabels=false){
 	var svg = d3.select("body")		// Adds svg to body
 	  			.append("svg")
 	  			.attr("width",w)
 	  			.attr("height",h);
 	  			
 	// Traverses tree and sets node x and y values on [0-1] scale for plotting
-	setCladogramXY(tr.root,0,tr.tipNum,findMaxNodeDepth(tr.root));  			
+	this.setCladogramXY(this.root,0,findMaxNodeDepth(this.root));  			
 	
 	// Recursive function to actually draw lines
-	drawNodeLines(tr.root,svg,w,h,color,lwd);
+	drawNodeLines(this.root,svg,w,h,color,lwd,scale,padding);
 	
 	// Adds tip labels, if requested
 	if (tipLabels){
-		drawTipLabels(tr);
+		this.drawTipLabels(this.root,svg,w,h,scale,padding);
 	}	
 }
 
@@ -489,11 +644,10 @@ function drawPhylogram(tr,w,h,color="black",lwd=2,scale=0.9,padding=30,tipLabels
 
 // --------------------------------------------------
 
-// Make member function of tree?
-function drawTipLabels(node,svg,w,h,scale,padding){
+Tree.prototype.drawTipLabels = function (node,svg,w,h,scale,padding){
 	if (node.desc != null){				// Internal node
 		for (var i = 0; i < node.desc.length; i++){	// Recursively call descendant nodes
-			drawTipLabels(node.desc[i],svg,w,h,scale,padding);
+			this.drawTipLabels(node.desc[i],svg,w,h,scale,padding);
 		}
 	} else if (node.desc === null){		// Terminal node
 		svg.append("text")
@@ -636,6 +790,18 @@ function labelNodes(node,IDs){
 }
 
 // --------------------------------------------------
+// Utility function to calculate the mean of numbers in an array
+
+function mean(nums){
+	var avg = 0;
+	for (var i = 0; i < nums.length; i++){
+		avg += nums[i];
+	}
+	avg = avg/nums.length;
+	return avg;
+}
+
+// --------------------------------------------------
 // Function to animate line over tree
 // Argument list:
 //		lineX - Array of x-coordinate arrays [x1,x2] for all lines
@@ -764,6 +930,24 @@ function moveCirclesCladogram(nodeset, svg, currX, tipNum, moveTime){
 
 // --------------------------------------------------
 
+// Draw from a multinomial distribution of arbitrary size
+
+function multiDraw(values,probs){
+	var value = null;
+	var totalProb = 0;
+	var unifDraw = Math.random();
+	for (var i = 0; i < probs.length; i++){
+		totalProb += probs[i];
+		if (unifDraw <= totalProb){
+			value = values[i];
+			break;
+		}
+	}
+	return value;
+}
+
+// --------------------------------------------------
+
 // Utility function to print out the x coordinates for all the terminal nodes.
 // It expects to initially be passed the root node of a tree (or a clade).
 
@@ -795,16 +979,16 @@ function readNewick( file ){
 // Function that traverses tree and sets relative X and Y coordinates (0-1) appropriately
 // for plotting a cladogram.
 
-function setCladogramXY(node,termCount,tipNum,maxDepth){
+Tree.prototype.setCladogramXY = function (node,termCount,maxDepth) {
 
 	if (node.name === "root"){	// Sets flags for tree
-		node.tree.isCladogram = true;
-		node.tree.isPhylogram = false;
+		this.isCladogram = true;
+		this.isPhylogram = false;
 	}
 
 	if (node.desc != null){	// Internal node
 		for (var i = 0; i < node.desc.length; i++){
-			termCount = setCladogramXY(node.desc[i],termCount,tipNum,maxDepth);
+			termCount = this.setCladogramXY(node.desc[i],termCount,maxDepth);
 		}
 		node.x = node.depth/maxDepth;		// Uses pre-existing depth to set x coordinate
 		var sumDescY = 0;
@@ -814,10 +998,10 @@ function setCladogramXY(node,termCount,tipNum,maxDepth){
 		node.y = sumDescY/node.desc.length;	// Averages y-positions of descendants to plot 
 	}										// ancestor.
 	
-	if (node.desc === null){				// Terminal node
-		node.x = 1;							// Tips all the way to the right
-		node.y = termCount++/(tipNum-1);	// Evenly spreads tips vertically
-	}										//	** Also updates termCount.
+	if (node.desc === null){					// Terminal node
+		node.x = 1;								// Tips all the way to the right
+		node.y = termCount++/(this.tipNum-1);	// Evenly spreads tips vertically
+	}											//	** Also updates termCount.
 	
 	return termCount;		// Keeps track of tip count to place them vertically
 }
@@ -858,4 +1042,15 @@ function setPhylogramXY(node,termCount,tipNum,maxDist){
 	
 	return termCount;		// Keeps track of tip count to place them vertically
 }
+
+// --------------------------------------------------
+
+function sum(values){
+	var total = 0;
+	for (var i = 0; i < values.length; i++){
+		total += values[i];
+	}
+	return total;
+}
+
 
