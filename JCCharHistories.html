@@ -41,7 +41,15 @@
     	<p>
     
 			Current Branch Length: <span id="brl" style="color:black;"></span><br><br>
-			0.0<input type="range" min="0.0" max="20.0" step="0.01" id="brlSlider" onchange="showValue(this.value);">20.0
+			0.0<input class="wide-slider" type="range" min="0.0" max="10.0" step="0.01" id="brlSlider" onchange="showValue(this.value);">10.0
+		
+			<br><br>
+		
+			Fixed Starting State: <input type="checkbox" id="fixStart" onclick="fixStartState()" checked>
+		
+			<br><br>
+
+			Show Character States: <input type="checkbox" id="showStates" onclick="showCharStates()" checked>
 		
 			<br><br>
 		
@@ -55,9 +63,6 @@
  		
     	<script>
     
- 			d3.select("#brlSlider").property("value",2.0);
- 			showValue(2.0);
- 			
  			var myModel = new Model(bf=[0.25,0.25,0.25,0.25],
  									rates=[1,1,1,1,1,1],
  									gammaRates=true,
@@ -66,12 +71,35 @@
  									i=0);
  			
  			var myCharHistory = new characterHistory(model=myModel);
+    
+    		var startState = null;
+    		function fixStartState(){
+    			if (document.getElementById("fixStart").checked === true){
+    				startState = "A";
+    			} else {
+    				startState = null;
+    			}
+    		}
+    		fixStartState();
+    
+    		var show = true;
+    		function showCharStates(){
+    			if (document.getElementById("showStates").checked === true){
+    				show = true;
+    			} else {
+    				show = false;
+    			}
+    		}
+    
+ 			d3.select("#brlSlider").property("value",1.0);
+ 			showValue(1.0);
+ 			
  			
  			d3.select("#drawCharHist").on("click",function(){
  				var brl = parseFloat(d3.select("#brlSlider").property("value"));
-				myCharHistory.sampleHistory(brl);
+				myCharHistory.sampleHistory(brl,startState);
 				var plotSvg = d3.select("#histories").append("svg");
-				myCharHistory.drawHistory(brl,w=800,h=30,svg=plotSvg);
+				myCharHistory.drawHistory(brl,w=800,h=30,svg=plotSvg,showStates=show);
 				d3.select("#histories").append("br");
  			});
 
@@ -79,8 +107,8 @@
  			
  		<p>
 			Set the branch length using the slider. Each time you click the "Draw Character History" button, a history of
-			character change will be recorded below. Colors correspond to different nucleotide states (A, C, G, and T). In the Jukes-Cantor model, nucleotides behave
-			equivalently, so the assignment of colors is arbitrary.	
+			character change will be recorded below. Colors correspond to different nucleotide states (A, C, G, and T). The 
+			length of each colored segment shows the amount of time the character spends in a given state.	
  		</p>
  			
  		<section id="histories">
