@@ -33,7 +33,7 @@ class characterHistory {
 		}
 	}
 	
-	drawHistory(brl,w,h,svg=null,colors=["#ff0000","#3cb371","#ffa500","#0000ff"],id="charHistSVG"){
+	drawHistory(brl,w,h,svg=null,showStates=true,colors=["#ff0000","#3cb371","#ffa500","#0000ff"],id="charHistSVG"){
 		if (svg === null){
 			svg = d3.select("body")
 					.append("svg")
@@ -66,7 +66,6 @@ class characterHistory {
 			  })
 			  .attr("x2",function(){
 			  		if (i === (states.length-1)){
-			  			currX = w;
 			  			return w;
 			  		} else {
 			  			waitTimeSum += waitingTimes[i];
@@ -76,7 +75,24 @@ class characterHistory {
 			  })
 			  .attr("y1",h/2)
 			  .attr("y2",h/2)
- 
+			  
+ 			if (showStates){
+				svg.append("text")
+				   .attr("fill","white")
+				   .attr("x",function(){
+						if (i === (states.length-1)){					// Last state						
+							return currX + ((w-currX)/2);
+						} else if (i === 0){							// First state
+							return (((waitingTimes[i]/2)/brl) * w);
+						} else {										// All other states
+							return currX - (((waitingTimes[i]/2)/brl) * w);
+						}
+				   })
+				   .attr("y",(h/2)+5)
+				   .attr("text-anchor","middle")
+				   .attr("font-size","14px")
+				   .text(states[i]);
+ 			}
 		}
 	}
 }
