@@ -15,7 +15,7 @@
         
 		<style type="text/css">
         	
-        	@font-face { font-family: Glober; font-weight: semibold; src: url('../Glober-SemiBold.otf'); }
+        	@font-face { font-family: Glober; font-weight: semibold; src: url('Glober-SemiBold.otf'); }
         	        	
         	h1 {
         		font-family: Glober;
@@ -26,22 +26,103 @@
         		font-family: Glober;
         		font-size: 14px;
         	}
-        	        	
+        	        
+        	.wide-slider{
+        		width: 800px;
+        	}
+        	
+        	#tooltip {
+				position: absolute;
+				width: 250px;
+				height: auto;
+				padding: 10px;
+				background-color: white;
+				-webkit-border-radius: 10px;
+				-moz-border-radius: 10px;
+				border-radius: 10px;
+				-webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+				-moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+				box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+				pointer-events: none;
+			}
+
+			#tooltip.hidden {
+				display: none;
+			}
+
+			#tooltip p {
+				margin: 0;
+				font-family: sans-serif;
+				font-size: 16px;
+				line-height: 20px;
+			}
+        	
         </style>
         <script>
-        	function showValue(val){
+        	function showValueAppendScale(val){
     			document.getElementById("brl").innerHTML=val;
+				appendScale(val);
     		}
+    		
+    		function appendScale(val){
+				var plotSvg = d3.select("#histories")
+								.append("svg")
+								.attr("width",800)
+    							.attr("height",20);
+    			plotSvg.append("line")
+    				   .attr("x1",0)
+    				   .attr("x2",800)
+    				   .attr("y1",19)
+    				   .attr("y2",19)
+    				   .attr("stroke","black")
+    				   .attr("stroke-width",2);
+    			plotSvg.append("line")
+    				   .attr("x1",1)
+    				   .attr("x2",1)
+    				   .attr("y1",20)
+    				   .attr("y2",15)
+    				   .attr("stroke","black")
+    				   .attr("stroke-width",2);
+    			plotSvg.append("line")
+    				   .attr("x1",800-1)
+    				   .attr("x2",800-1)
+    				   .attr("y1",20)
+    				   .attr("y2",15)
+    				   .attr("stroke","black")
+    				   .attr("stroke-width",2);
+				plotSvg.append("text")
+					   .attr("fill","black")
+					   .attr("x",0)
+					   .attr("text-anchor","start")
+					   .attr("font-size","14px")
+					   .attr("y",10)
+					   .text("0.0");
+				plotSvg.append("text")
+					   .attr("fill","black")
+					   .attr("x",800)
+					   .attr("text-anchor","end")
+					   .attr("font-size","14px")
+					   .attr("y",10)
+					   .text(val);
+				d3.select("#histories").append("br");
+    		}
+    		
 		</script>
     </head>
     <body>
+    	
+    	<div id="tooltip" class="hidden">
+			<p><strong>Detailed Character History</strong></p>
+			<p><i>Changes  (Waiting Times)</i></p><br>
+			<p><span id="value"></span></p>
+		</div>
     	
     	<h1>Jukes-Cantor Character Histories</h1>
     	
     	<p>
     
 			Current Branch Length: <span id="brl" style="color:black;"></span><br><br>
-			0.0<input class="wide-slider" type="range" min="0.0" max="10.0" step="0.01" id="brlSlider" onchange="showValue(this.value);">10.0
+			0.0<input class="wide-slider" type="range" min="0.0" max="10.0" step="0.01" id="brlSlider" onchange="showValueAppendScale(this.value);">10.0
 		
 			<br><br>
 		
@@ -51,6 +132,12 @@
 
 			Show Character States: <input type="checkbox" id="showStates" onclick="showCharStates()" checked>
 		
+			<br><br>
+		
+			<button id="clearCharHists"
+					style="display: inline-block; text-align: right">Clear Character History Record
+			</button>
+			
 			<br><br>
 		
 			<button id="drawCharHist"
@@ -91,8 +178,12 @@
     			}
     		}
     
- 			d3.select("#brlSlider").property("value",1.0);
- 			showValue(1.0);
+ 			d3.select("#clearCharHists").on("click",function(){
+ 				d3.select("#histories").selectAll("svg").remove();
+ 				d3.select("#histories").selectAll("br").remove();
+ 				var brl = parseFloat(d3.select("#brlSlider").property("value"));
+ 				appendScale(brl);
+ 			});
  			
  			
  			d3.select("#drawCharHist").on("click",function(){
@@ -100,15 +191,44 @@
 				myCharHistory.sampleHistory(brl,startState);
 				var plotSvg = d3.select("#histories").append("svg");
 				myCharHistory.drawHistory(brl,w=800,h=30,svg=plotSvg,showStates=show);
+				plotSvg.datum([myCharHistory.states,myCharHistory.waitingTimes]);
+				
+				plotSvg.on("mouseover",function(d){
+						d3.select("#tooltip")
+						  .style("left",d3.event.clientX + "px")
+						  .style("top",d3.event.clientY + "px");
+					if (d[0].length === 1){
+						d3.select("#tooltip")
+						  .select("#value")
+						  .append("p")
+						  .text("No character changes.")
+					}
+					for (var i = 0; i < d[0].length-1; i++){
+						d3.select("#tooltip")
+						  .select("#value")
+						  .append("p")
+						  .text(d[0][i] + " -> " + d[0][i+1] + "  (" + parseFloat(d[1][i]).toFixed(4) + ")");
+					}
+					d3.select("#tooltip").classed("hidden", false);
+				})
+				
+				plotSvg.on("mouseout",function(){
+					//Hide the tooltip
+    				d3.select("#tooltip").classed("hidden", true);
+    				d3.select("#tooltip").select("#value").selectAll("p").remove();
+				})
+				
 				d3.select("#histories").append("br");
+				
  			});
+ 			
 
 		</script>
  			
  		<p>
 			Set the branch length using the slider. Each time you click the "Draw Character History" button, a history of
-			character change will be recorded below. Colors correspond to different nucleotide states (A, C, G, and T). The 
-			length of each colored segment shows the amount of time the character spends in a given state.	
+			character change will be recorded below. Each history has a total length equal to the branch length you've chosen. Colors correspond to different nucleotide states (A, C, G, and T). The 
+			length of each colored segment shows the proportion of the branch length the character spends in a given state. Mousing over a character history will give a detailed record of the changes and corresponding waiting times.
  		</p>
  			
  		<section id="histories">
@@ -128,6 +248,10 @@
 				Comments and bug reports should be directed to jembrown@lsu.edu.
  			</p>
  		</section>
+ 		<script>
+ 		 	d3.select("#brlSlider").property("value",1.0);
+ 			showValueAppendScale(1.0);
+		</script>
     </body>
 </html>
 
