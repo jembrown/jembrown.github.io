@@ -207,6 +207,46 @@ class coalescentHistory {
 				   .attr("font-size","12")
 				   .text(gen+1);
 		}
+		var timelineSVG = d3.select("body")		// Adding timeline to side of coalescent history
+				    .select(sectionID)
+		  		    .append("svg")
+		  		    .attr("width",80)
+		  		    .attr("height",h);
+		timelineSVG.append("text")
+				   .attr("x",40)
+				   .attr("y",padding+5)
+				   .attr("text-anchor","middle")
+				   .attr("font-family","Glober")
+				   .attr("font-size","14")
+		  		   .text("Present");
+		timelineSVG.append("text")
+				   .attr("x",40)
+				   .attr("y",(((this.nGens-1)/this.nGens)*h)+padding+5)
+				   .attr("text-anchor","middle")
+				   .attr("font-family","Glober")
+				   .attr("font-size","14")
+		  		   .text("Past");
+		timelineSVG.append("line")
+				   .attr("x1",40)
+				   .attr("x2",40)
+				   .attr("y1",padding+15)
+				   .attr("y2",(((this.nGens-2)/this.nGens)*h)+padding+5)
+				   .attr("stroke","black")
+				   .attr("stroke-width",1);
+		timelineSVG.append("line")
+				   .attr("x1",30)
+				   .attr("x2",40)
+				   .attr("y1",(((this.nGens-2.5)/this.nGens)*h)+padding+5)
+				   .attr("y2",(((this.nGens-2)/this.nGens)*h)+padding+5)
+				   .attr("stroke","black")
+				   .attr("stroke-width",1);
+		timelineSVG.append("line")
+				   .attr("x1",50)
+				   .attr("x2",40)
+				   .attr("y1",(((this.nGens-2.5)/this.nGens)*h)+padding+5)
+				   .attr("y2",(((this.nGens-2)/this.nGens)*h)+padding+5)
+				   .attr("stroke","black")
+				   .attr("stroke-width",1);
 	}
 	
 	drawHistory(w,h,padding,sectionID){
