@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Coalescent Histories in a Population</title>
+        
+        <!-- d3 library for data visualization and animation -->
+        <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+
+        <!-- jstat library for probability distributions -->
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+        
+        <!-- phyleaux library for phylogenetic objects and functions -->
+        <script type="text/javascript" src="https://jembrown.github.io/phyleaux.js"></script>
+        
+		<style type="text/css">
+        	
+        	@font-face { font-family: Glober; font-weight: semibold; src: url('Glober-SemiBold.otf'); }
+        	        	
+        	h1 {
+        		font-family: Glober;
+        		font-size: 24px;
+        	}
+        	        	
+        	p {
+        		font-family: Glober;
+        		font-size: 14px;
+        	}
+        </style>
+    </head>
+    <body>
+    
+		<h1>Coalescent Histories In a Population</h1>
+	
+		<section id="controls">
+			<form id="popSize">
+				Population Size: <input type="text" id="popSizeValue" size=10>
+			</form>
+			<br>
+			<form id="sampSize">
+				Sample Size: <input type="text" id="sampSizeValue" size=10>
+			</form>
+			<br>
+			<form id="numGens">
+				Number of Generations: <input type="text" id="numGensValue" size=10>
+			</form>
+			<br>
+			<button id="redraw"
+					style="display: inline-block; text-align: right">Redraw
+			</button>
+		</section>
+		<br>
+		<section id = "visualization">
+			<script>
+			
+				// Setting coalescent defaults
+				var popSize = 10;
+				var nGens = 20;
+				var sampleSize = 10;
+			
+				// Setting plotting defaults	
+				var svgWidth = popSize * 40;	
+				var svgHeight = nGens * 30;
+				var padding = 15;
+
+				// Adding defaults to input text boxes
+				d3.select("#popSizeValue").property("value",popSize);
+				d3.select("#sampSizeValue").property("value",sampleSize);
+				d3.select("#numGensValue").property("value",nGens);
+
+				function doTheCoalescent(){
+			
+					d3.selectAll("svg").remove();
+			
+					popSize = parseInt(d3.select("#popSizeValue").property("value"))
+					nGens = parseInt(d3.select("#numGensValue").property("value"));
+					sampleSize = parseInt(d3.select("#sampSizeValue").property("value"));
+			
+					var myCoalHist = new coalescentHistory(popSize,
+														   nGens,
+														   sampleSize);
+	
+					myCoalHist.sampleHistory();
+	
+					svgWidth = popSize * 40;
+					svgHeight = nGens * 30;
+	
+					myCoalHist.drawSortedHistory(svgWidth,svgHeight,padding,"#visualization");
+				}
+			
+				doTheCoalescent();
+		
+				// The next 3 event listeners just keep the text forms from reverting
+				// to default values when the user presses enter.
+				
+				var popSizeForm = document.getElementById("popSize");
+				popSizeForm.addEventListener("submit",function(event){
+					event.preventDefault();
+				});
+				
+				var sampSizeForm = document.getElementById("sampSize");
+				sampSizeForm.addEventListener("submit",function(event){
+					event.preventDefault();
+				});
+				
+				var numGensForm = document.getElementById("numGens");
+				numGensForm.addEventListener("submit",function(event){
+					event.preventDefault();
+				});
+
+				d3.select("#redraw")
+				  .on("click",function(){
+				  		doTheCoalescent();
+				  });
+	
+			</script>
+ 		</section>
+ 		<br><br>
+		<section id="pageCredits">
+ 			<p>
+				<img width=100 height=100 src="https://raw.githubusercontent.com/jembrown/websiteImages/master/ssb.png">
+				<br><br>
+				Development of the Phyleaux Javascript Library and related interactive phylogenetics tools is supported by the Society of Systematic Biologists.
+				<br><br>
+				Comments and bug reports should be directed to jembrown@lsu.edu.
+ 			</p>
+ 		</section>
+
+    </body>
+</html>
