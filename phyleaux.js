@@ -7,7 +7,6 @@
 
 // ---------------- ** Classes ** ----------------
 
-
 // Class to store the states and waiting times for a single character history
 
 class characterHistory {
@@ -98,6 +97,8 @@ class characterHistory {
 	}
 }
 
+// Class for simulating coalescent histories within a single population
+
 class coalescentHistory {
 
 	constructor(popSize,nGens,sampleSize){
@@ -137,15 +138,15 @@ class coalescentHistory {
 	}
 	
 	drawSortedHistory(w,h,padding,sectionID){
-		var coalSVG = d3.select("body")
+		var coalSVG = d3.select("body")		// Create new svg
 						.select(sectionID)
 						.append("svg")
 						.attr("width",w)
 						.attr("height",h);
-		for (var g = this.nGens-2; g >= 0; g--){
-			var noSwaps = true;
-			while (noSwaps){	// Keep looping when swaps happen, because individuals are reordered
-				noSwaps = false;
+		for (var g = this.nGens-2; g >= 0; g--){	// Sort so that lines don't cross
+			var swaps = true;
+			while (swaps){	// Keep looping when swaps happen, because individuals are reordered
+				swaps = false;
 				for (var i = 0; i < (this.popSize-1); i++){
 					for (var j = i+1; j < this.popSize; j++){
 						if (this.descMatrix[g][i].selected && this.descMatrix[g][j].selected){
@@ -158,38 +159,38 @@ class coalescentHistory {
 								this.descMatrix[g][j].xPos = xTemp;
 								this.descMatrix[g][i].swapped = true;
 								this.descMatrix[g][j].swapped = true;
-								noSwaps = true;
+								swaps = true;
 							}
 						}
 					}
 				}
 			}
 		}
-		for (var gen = 0; gen < this.nGens; gen++){	
+		for (var gen = 0; gen < this.nGens; gen++){			// Circles
 			for (var pop = 0; pop < this.popSize; pop++){
 				var thisInd = this.descMatrix[gen][pop];
 				if (! thisInd.selected){
 					coalSVG.append("circle")
-						   .attr("cx",((thisInd.xPos/(this.popSize))*w)+padding)
+						   .attr("cx",((thisInd.xPos/(this.popSize))*w)+padding+20)
 						   .attr("cy",((gen/this.nGens)*h)+padding)
 						   .attr("r",10)
-						   .attr("fill","blue")
+						   .attr("fill","blue");
 				} else if (thisInd.selected){
 					coalSVG.append("circle")
-						   .attr("cx",((thisInd.xPos/this.popSize)*w)+padding)
+						   .attr("cx",((thisInd.xPos/this.popSize)*w)+padding+20)
 						   .attr("cy",((gen/this.nGens)*h)+padding)
 						   .attr("r",10)
 						   .attr("fill","red");
 				}
 			}
 		}	// Finish plotting circles for individuals
-		for (var gen = 0; gen < this.nGens; gen++){	
+		for (var gen = 0; gen < this.nGens; gen++){			// Lines
 			for (var pop = 0; pop < this.popSize; pop++){
 				var thisInd = this.descMatrix[gen][pop];
 				if (thisInd.selected && gen != (this.nGens-1)){
 					coalSVG.append("line")
-						   .attr("x1",((thisInd.xPos/this.popSize)*w)+padding)
-						   .attr("x2",((thisInd.parent.xPos/this.popSize)*w)+padding)
+						   .attr("x1",((thisInd.xPos/this.popSize)*w)+padding+20)
+						   .attr("x2",((thisInd.parent.xPos/this.popSize)*w)+padding+20)
 						   .attr("y1",((gen/this.nGens)*h)+padding)
 						   .attr("y2",(((gen+1)/this.nGens)*h)+padding)
 						   .attr("stroke","red")
@@ -197,6 +198,15 @@ class coalescentHistory {
 				}
 			}
 		}	// Finish drawing lines of descent
+		for (var gen = 0; gen < this.nGens; gen++){
+			coalSVG.append("text")
+				   .attr("x",10)
+				   .attr("y",((gen/this.nGens)*h)+padding+5)
+				   .attr("text-anchor","middle")
+				   .attr("font-family","Glober")
+				   .attr("font-size","12")
+				   .text(gen+1);
+		}
 	}
 	
 	drawHistory(w,h,padding,sectionID){
@@ -237,6 +247,8 @@ class coalescentHistory {
 	}
 	
 }
+
+// Class to represent individuals in coalescent simulations
 
 class coalescentIndividual {
 
