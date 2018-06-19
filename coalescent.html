@@ -59,7 +59,7 @@
 				var sampleSize = 10;
 			
 				// Setting plotting defaults	
-				var svgWidth = popSize * 40;	
+				var svgWidth = popSize * 45;	
 				var svgHeight = nGens * 30;
 				var padding = 15;
 
@@ -72,7 +72,7 @@
 			
 					d3.selectAll("svg").remove();
 			
-					popSize = parseInt(d3.select("#popSizeValue").property("value"))
+					popSize = parseInt(d3.select("#popSizeValue").property("value"));
 					nGens = parseInt(d3.select("#numGensValue").property("value"));
 					sampleSize = parseInt(d3.select("#sampSizeValue").property("value"));
 			
@@ -82,7 +82,7 @@
 	
 					myCoalHist.sampleHistory();
 	
-					svgWidth = popSize * 40;
+					svgWidth = popSize * 45;
 					svgHeight = nGens * 30;
 	
 					myCoalHist.drawSortedHistory(svgWidth,svgHeight,padding,"#visualization");
@@ -110,7 +110,13 @@
 
 				d3.select("#redraw")
 				  .on("click",function(){
-				  		doTheCoalescent();
+				  		sampleSize = parseInt(d3.select("#sampSizeValue").property("value"));
+				  		popSize = parseInt(d3.select("#popSizeValue").property("value"));
+				  		if (sampleSize > popSize){
+				  			alert("Sample size cannot be greater than the population size.")
+				  		} else {
+				  			doTheCoalescent();
+				  		}
 				  });
 	
 			</script>
