@@ -1,4 +1,4 @@
-// phyleaux.js (a2)
+// phyleaux.js (a3)
 // Jeremy M. Brown
 // jembrown@lsu.edu
 // A library for phylogenetic illustrations and animations
@@ -6,6 +6,7 @@
 
 
 // ---------------- ** Classes ** ----------------
+
 
 // Class to store the states and waiting times for a single character history
 
@@ -74,7 +75,7 @@ class characterHistory {
 			  		}
 			  })
 			  .attr("y1",h/2)
-			  .attr("y2",h/2)
+			  .attr("y2",h/2);
 			  
  			if (showStates){
 				svg.append("text")
@@ -97,11 +98,160 @@ class characterHistory {
 	}
 }
 
+class coalescentHistory {
+
+	constructor(popSize,nGens,sampleSize){
+		this.popSize = popSize;
+		this.nGens = nGens;
+		this.sampleSize = sampleSize;
+		this.descMatrix = [];
+		for (var i = 0; i < nGens; i++){
+			this.descMatrix.push([]);
+			for (var j = 0; j < popSize; j++){
+				this.descMatrix[i].push(new coalescentIndividual(null,j,[],false));
+			}
+		}
+	}
+	
+	sampleHistory(){
+		var numSelections = 0;
+		//if (this.sampleSize < this.popSize){
+			while (numSelections < this.sampleSize){	// Select individuals from most recent generation
+				var selectedInd = Math.floor(Math.random() * this.popSize);
+				if (this.descMatrix[0][selectedInd].selected === false){
+					this.descMatrix[0][selectedInd].selected = true;
+					numSelections++;
+				}
+			}
+			for (var g = 1; g < this.nGens; g++){
+				for (var i = 0; i < this.popSize; i++){
+					if (this.descMatrix[g-1][i].selected){
+						var parentIndex = Math.floor(Math.random() * this.popSize);
+						this.descMatrix[g-1][i].parent = this.descMatrix[g][parentIndex];
+						this.descMatrix[g][parentIndex].desc.push(this.descMatrix[g-1][i]);
+						this.descMatrix[g][parentIndex].selected = true;
+					}
+				}
+			}
+		//}
+	}
+	
+	drawSortedHistory(w,h,padding,sectionID){
+		var coalSVG = d3.select("body")
+						.select(sectionID)
+						.append("svg")
+						.attr("width",w)
+						.attr("height",h);
+		for (var g = this.nGens-2; g >= 0; g--){
+			var noSwaps = true;
+			while (noSwaps){	// Keep looping when swaps happen, because individuals are reordered
+				noSwaps = false;
+				for (var i = 0; i < (this.popSize-1); i++){
+					for (var j = i+1; j < this.popSize; j++){
+						if (this.descMatrix[g][i].selected && this.descMatrix[g][j].selected){
+							if (((this.descMatrix[g][i].parent.xPos > this.descMatrix[g][j].parent.xPos) && 
+								(this.descMatrix[g][i].xPos < this.descMatrix[g][j].xPos)) ||
+								((this.descMatrix[g][i].parent.xPos < this.descMatrix[g][j].parent.xPos) && 
+								(this.descMatrix[g][i].xPos > this.descMatrix[g][j].xPos))){
+								var xTemp = this.descMatrix[g][i].xPos;
+								this.descMatrix[g][i].xPos = this.descMatrix[g][j].xPos;
+								this.descMatrix[g][j].xPos = xTemp;
+								this.descMatrix[g][i].swapped = true;
+								this.descMatrix[g][j].swapped = true;
+								noSwaps = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		for (var gen = 0; gen < this.nGens; gen++){	
+			for (var pop = 0; pop < this.popSize; pop++){
+				var thisInd = this.descMatrix[gen][pop];
+				if (! thisInd.selected){
+					coalSVG.append("circle")
+						   .attr("cx",((thisInd.xPos/(this.popSize))*w)+padding)
+						   .attr("cy",((gen/this.nGens)*h)+padding)
+						   .attr("r",10)
+						   .attr("fill","blue")
+				} else if (thisInd.selected){
+					coalSVG.append("circle")
+						   .attr("cx",((thisInd.xPos/this.popSize)*w)+padding)
+						   .attr("cy",((gen/this.nGens)*h)+padding)
+						   .attr("r",10)
+						   .attr("fill","red");
+				}
+			}
+		}	// Finish plotting circles for individuals
+		for (var gen = 0; gen < this.nGens; gen++){	
+			for (var pop = 0; pop < this.popSize; pop++){
+				var thisInd = this.descMatrix[gen][pop];
+				if (thisInd.selected && gen != (this.nGens-1)){
+					coalSVG.append("line")
+						   .attr("x1",((thisInd.xPos/this.popSize)*w)+padding)
+						   .attr("x2",((thisInd.parent.xPos/this.popSize)*w)+padding)
+						   .attr("y1",((gen/this.nGens)*h)+padding)
+						   .attr("y2",(((gen+1)/this.nGens)*h)+padding)
+						   .attr("stroke","red")
+						   .attr("stroke-width",2);
+				}
+			}
+		}	// Finish drawing lines of descent
+	}
+	
+	drawHistory(w,h,padding,sectionID){
+	
+		var coalSVG = d3.select("body")
+						.select(sectionID)
+		  				.append("svg")
+		  				.attr("width",w)
+		  				.attr("height",h);
+		for (var gen = 0; gen < this.nGens; gen++){	
+			for (var pop = 0; pop < this.popSize; pop++){
+				var thisInd = this.descMatrix[gen][pop];
+				if (! thisInd.selected){
+					coalSVG.append("circle")
+						   .attr("cx",((thisInd.xPos/(this.popSize))*w)+padding)
+						   .attr("cy",((gen/this.nGens)*h)+padding)
+						   .attr("r",10)
+						   .attr("fill","blue")
+				} else if (thisInd.selected){
+					coalSVG.append("circle")
+						   .attr("cx",((thisInd.xPos/this.popSize)*w)+padding)
+						   .attr("cy",((gen/this.nGens)*h)+padding)
+						   .attr("r",10)
+						   .attr("fill","red");
+					if (gen != this.nGens-1){
+						coalSVG.append("line")
+							   .attr("x1",((thisInd.xPos/this.popSize)*w)+padding)
+							   .attr("x2",((thisInd.parent.xPos/this.popSize)*w)+padding)
+							   .attr("y1",((gen/this.nGens)*h)+padding)
+							   .attr("y2",(((gen+1)/this.nGens)*h)+padding)
+							   .attr("stroke","red")
+							   .attr("stroke-width",2);
+					}			
+				}
+			}
+		}
+	
+	}
+	
+}
+
+class coalescentIndividual {
+
+	constructor(parent,xPos,desc=[],selected=false){
+		this.parent = parent;
+		this.xPos = xPos;
+		this.desc = desc;
+		this.selected = selected;
+	}
+
+}
+
 // Class for a GTR-class model of nucleotide sequence evolution
 
 class Model {
-
-	// Hmmmm...should this class contain just one site along one lineage...or many sites...or a tree?
 
 	constructor(bf,rates,gammaRates=true,alpha,invSites=false,i,state="A"){
 		this.bf = bf;
