@@ -1,11 +1,52 @@
-// phyleaux.js (a3)
+// phyleaux.js (a4)
 // Jeremy M. Brown
 // jembrown@lsu.edu
 // A library for phylogenetic illustrations and animations
 // *** Requires d3.js ***
-
+// *** jStat.js required for functions involving character histories ***
 
 // ---------------- ** Classes ** ----------------
+
+// Class to store a character history across a tree
+
+class characterHistoryTree {
+
+	constructor(tr,model){
+		this.tr = tr;		// Attach states and waiting times to branches of tree
+		this.model = model;
+	}
+	
+	sampleHistory(startState=null){
+		this.tr.root.states = [];
+		if (startState != null){
+			this.tr.root.states.push(startState);
+		} else {
+			this.tr.root.states.push(multiDraw(["A","C","G","T"],this.model.bf));
+		}
+		for (var i = 0; i < this.tr.root.desc.length; i++){
+			this.sampleHistoryNode(this.tr.root.desc[i],this.tr.root.states[0]);
+		}
+	}
+	
+	sampleHistoryNode(node,startState){
+		node.states = [];
+		node.waitingTimes = [];
+		node.states.push(startState);
+		while (sum(node.waitingTimes) < node.brl){
+			node.waitingTimes.push(this.model.drawWaitingTime(node.states[node.states.length-1]));
+			if (sum(node.waitingTimes) < node.brl){
+				node.states.push(this.model.drawNewState(node.states[node.states.length-1]));
+			}
+		}
+		if (node.desc != null){
+			for (var i = 0; i < node.desc.length; i++){
+				this.sampleHistoryNode(node.desc[i],node.states[node.states.length-1]);
+			}
+		}
+	}
+
+}
+
 
 // Class to store the states and waiting times for a single character history
 
@@ -198,7 +239,7 @@ class coalescentHistory {
 				}
 			}
 		}	// Finish drawing lines of descent
-		for (var gen = 0; gen < this.nGens; gen++){
+		for (var gen = 0; gen < this.nGens; gen++){		// Adds numeric labels for generations
 			coalSVG.append("text")
 				   .attr("x",10)
 				   .attr("y",((gen/this.nGens)*h)+padding+5)
@@ -208,10 +249,10 @@ class coalescentHistory {
 				   .text(gen+1);
 		}
 		var timelineSVG = d3.select("body")		// Adding timeline to side of coalescent history
-				    .select(sectionID)
-		  		    .append("svg")
-		  		    .attr("width",80)
-		  		    .attr("height",h);
+							.select(sectionID)
+		  					.append("svg")
+		  					.attr("width",80)
+		  					.attr("height",h);
 		timelineSVG.append("text")
 				   .attr("x",40)
 				   .attr("y",padding+5)
@@ -742,7 +783,7 @@ function countStateInArray(st,arr){
 // lwd is line width
 // tipLabels is bool to specify whether or not tips should be labeled
 
-Tree.prototype.drawCladogram = function(w,h,color="black",lwd=4,scale=0.9,padding=30,tipLabels=false){
+Tree.prototype.drawCladogram = function(w,h,color="black",lwd=4,scale=0.9,padding=30,tipLabels=false,fSize=6){
 	var svg = d3.select("body")		// Adds svg to body
 	  			.append("svg")
 	  			.attr("width",w)
@@ -756,7 +797,7 @@ Tree.prototype.drawCladogram = function(w,h,color="black",lwd=4,scale=0.9,paddin
 	
 	// Adds tip labels, if requested
 	if (tipLabels){
-		this.drawTipLabels(this.root,svg,w,h,scale,padding);
+		this.drawTipLabels(this.root,svg,w,h,scale,padding,fSize);
 	}	
 }
 
@@ -825,6 +866,71 @@ function drawNodeLines(node,svg,w,h,color,lwd,scale=0.9,padding=30){
 
 // --------------------------------------------------
 
+// Function to draw square tree on existing svg
+// Scale values < 1 keeps total tree size smaller than the svg.
+// Padding shifts lines away from svg edges in top-left corner
+// w and h are the width and height of the svg, respectively
+// lwd is the line width
+
+function drawNodeLinesWithHistory(node,svg,w,h,colors,lwd,scale=0.9,padding=30){
+
+	if (node.desc != null){	// Operates on internal nodes - lines drawn parent -> desc
+		for (var i = 0; i < node.desc.length; i++){
+			svg.append("line")	// Vertical lines
+			   .attr("x1",(node.x * w * scale) + padding)
+			   .attr("x2",(node.x * w * scale) + padding)
+			   .attr("y1",(node.y * h * scale) + padding)
+			   .attr("y2",(node.desc[i].y * h * scale) + padding)
+			   .attr("stroke",colors[findStateIndex(node.states[node.states.length-1])])
+			   .attr("stroke-width",lwd);
+			
+			var waitTimeSum = 0;
+			var adj = (node.desc[i].x - node.x)/node.desc[i].brl;
+			node.desc[i].scaledWaitingTimes = [];
+			for (var t = 0; t < node.desc[i].waitingTimes.length; t++){
+				node.desc[i].scaledWaitingTimes.push(node.desc[i].waitingTimes[t] * adj);
+			}
+			for (var st = 0; st < node.desc[i].states.length; st++){
+				if (Math.abs(node.x - node.desc[i].x) > 0.001){
+					if ((waitTimeSum + node.desc[i].scaledWaitingTimes[st]) < (node.desc[i].x - node.x)){
+						svg.append("line")	// Horizontal lines
+						   .attr("x1",((node.x * w * scale) + (waitTimeSum * w * scale) + (padding-(lwd/2))))
+						   // Subtracting by lwd/2 for x1 is what keeps line intersections square
+						   .attr("x2",((node.x * w * scale) + (waitTimeSum * w * scale) + (node.desc[i].scaledWaitingTimes[st] * w * scale) + padding))
+						   .attr("y1",(node.desc[i].y * h * scale) + padding)
+						   .attr("y2",(node.desc[i].y * h * scale) + padding)
+						   .attr("stroke",colors[findStateIndex(node.desc[i].states[st])])
+						   .attr("stroke-width",lwd);
+					} else {
+						svg.append("line")	// Horizontal lines
+						   .attr("x1",((node.x * w * scale) + (waitTimeSum * w * scale) + (padding-(lwd/2))))
+						   // Subtracting by lwd/2 for x1 is what keeps line intersections square
+						   .attr("x2",(node.desc[i].x * w * scale) + padding)
+						   .attr("y1",(node.desc[i].y * h * scale) + padding)
+						   .attr("y2",(node.desc[i].y * h * scale) + padding)
+						   .attr("stroke",colors[findStateIndex(node.desc[i].states[st])])
+						   .attr("stroke-width",lwd);				
+					}
+				} else {	// Corrects for plotting artifacts with brls < lwd
+					svg.append("line")	// Horizontal lines
+					   .attr("x1",(node.x * w * scale) + (padding-(lwd/2)))
+					   // Subtracting by lwd/2 for x1 is what keeps line intersections square
+					   .attr("x2",(node.x * w * scale) + padding + (lwd/2))
+					   .attr("y1",(node.desc[i].y * h * scale) + padding)
+					   .attr("y2",(node.desc[i].y * h * scale) + padding)
+					   .attr("stroke",colors[findStateIndex(node.states[node.states.length-1])])
+					   .attr("stroke-width",lwd);
+				}
+				waitTimeSum += node.desc[i].scaledWaitingTimes[st];
+			}
+			
+			drawNodeLinesWithHistory(node.desc[i],svg,w,h,colors,lwd,scale,padding);
+		}	
+	}
+}
+
+// --------------------------------------------------
+
 // Function to plot a phylogram, if appropriate x and y values available
 // w and h are the width and height of the new svg
 // lwd is line width
@@ -846,8 +952,8 @@ function drawPhylogram(tr,w,h,color="black",lwd=2,scale=0.9,padding=30,tipLabels
 	svg.append("line")
 	   .attr("x1",0)
 	   .attr("x2",padding)
-	   .attr("y1",(tr.root.y * this.scale * this.h) + padding)
-	   .attr("y2",(tr.root.y * this.scale * this.h) + padding)
+	   .attr("y1",(tr.root.y * scale * h) + padding)
+	   .attr("y2",(tr.root.y * scale * h) + padding)
 	   .attr("stroke",color)
 	   .attr("stroke-width",lwd);
 	
@@ -862,16 +968,53 @@ function drawPhylogram(tr,w,h,color="black",lwd=2,scale=0.9,padding=30,tipLabels
 
 // --------------------------------------------------
 
-Tree.prototype.drawTipLabels = function (node,svg,w,h,scale,padding){
+// Function to plot a phylogram, if appropriate x and y values available
+// w and h are the width and height of the new svg
+// lwd is line width
+// tipLabels is bool to specify whether or not tips should be labeled
+
+// Make member function of tree?
+function drawPhylogramWithHistory(chHisTr,w,h,colors=["#ff0000","#3cb371","#ffa500","#0000ff"],lwd=4,scale=0.9,padding=30,tipLabels=false){
+
+	var svg = d3.select("body")		// Adds svg to body
+	  			.append("svg")
+	  			.attr("width",w)
+	  			.attr("height",h)
+	  			.attr("id","phylosvg");
+	  			
+	// Traverses tree and sets node x and y values on [0-1] scale for plotting
+	setPhylogramXY(chHisTr.tr.root,0,chHisTr.tr.tipNum,findMaxRootDist(chHisTr.tr.root));  			
+	
+	// Root
+	svg.append("line")
+	   .attr("x1",0)
+	   .attr("x2",padding)
+	   .attr("y1",(chHisTr.tr.root.y * scale * h) + padding)
+	   .attr("y2",(chHisTr.tr.root.y * scale * h) + padding)
+	   .attr("stroke",colors[chHisTr.model.findStateIndex(chHisTr.tr.root.states[0])])
+	   .attr("stroke-width",lwd);
+	
+	// Recursive function to actually draw lines
+	drawNodeLinesWithHistory(chHisTr.tr.root,svg,w,h,colors,lwd,scale,padding);
+	
+	// Adds tip labels, if requested
+	if (tipLabels){
+		drawTipLabels(chHisTr.tr.root,svg,w,h,scale,padding);
+	}	
+}
+
+// --------------------------------------------------
+
+Tree.prototype.drawTipLabels = function (node,svg,w,h,scale,padding,fSize=6){
 	if (node.desc != null){				// Internal node
 		for (var i = 0; i < node.desc.length; i++){	// Recursively call descendant nodes
-			this.drawTipLabels(node.desc[i],svg,w,h,scale,padding);
+			this.drawTipLabels(node.desc[i],svg,w,h,scale,padding,fSize);
 		}
 	} else if (node.desc === null){		// Terminal node
 		svg.append("text")
 		   .attr("transform","translate(" + ((node.x * scale * w) + padding + 5) + "," + ((node.y * scale * h) + padding + 2) + ")")
 		   .attr("text-anchor","left")
-		   .attr("font-size",6)
+		   .attr("font-size",fSize)
 		   .text(node.name)
 	}
 }
@@ -966,6 +1109,15 @@ function findSplitCommas(nodeStr){
 	}
 	
 	return commaIndices;
+}
+
+// --------------------------------------------------
+
+function findStateIndex(st){
+	if (st === "A"){ return 0; }
+	else if (st === "C"){ return 1; }
+	else if (st === "G"){ return 2; }
+	else if (st === "T"){ return 3; }
 }
 
 // --------------------------------------------------
