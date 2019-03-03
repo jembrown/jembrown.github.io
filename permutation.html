@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Permutation of Two Group Labels</title>
+        
+        <!-- d3 library for data visualization and animation -->
+        <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+
+        <!-- jstat library for probability distributions -->
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+        
+        <!-- phyleaux library for phylogenetic objects and functions -->
+        <!-- script type="text/javascript" src="https://jembrown.github.io/jembrown.js"></script -->
+        <script type="text/javascript" src="jembrown.js"></script>
+        
+		<!-- style type="text/css">
+        	
+        	@font-face { font-family: Glober; font-weight: semibold; src: url('Glober-SemiBold.otf'); }
+        	        	
+        	h1 {
+        		font-family: Glober;
+        		font-size: 24px;
+        	}
+        	        	
+        	p {
+        		font-family: Glober;
+        		font-size: 14px;
+        	}
+        </style -->
+    </head>
+    <body>
+    
+		<h1>Permutation Test for Comparing Means of Two Groups</h1>
+	
+		<section id="controls">
+			<button id="permute"
+					style="display: inline-block; text-align: right">Permute
+			</button>
+		</section>
+		<br>
+		<section id = "visualization">
+			<script>
+			
+				var svgWidth = 800;	
+				var svgHeight = 400;
+
+				var sampleSize = 5;
+
+				var sampleOne = [];
+				var labelOne = [];
+				
+				var meanOne = 10;
+				var sdOne = 1;
+								
+				for (let i = 0; i < sampleSize; i++){
+					let newSamp = Math.round(jStat.normal.sample(meanOne,sdOne)*100)/100;
+					sampleOne.push(newSamp);
+					labelOne.push("M")
+				}
+
+				var sampleTwo = [];
+				var labelTwo = [];
+				
+				var meanTwo = 12;
+				var sdTwo = 1;
+				
+				for (let i = 0; i < sampleSize; i++){
+					let newSamp = Math.round(jStat.normal.sample(meanTwo,sdTwo)*100)/100;
+					sampleTwo.push(newSamp);
+					labelTwo.push("F")				
+				}
+
+				var perSVG = d3.select("body")		// Create new svg
+								.select("#visualization")
+								.append("svg")
+								.attr("width",svgWidth)
+								.attr("height",svgHeight);
+
+				for (let i = 0; i < sampleSize*2; i++){
+					
+					perSVG.append("text")
+					  	.attr("x",30+(70*i))
+					  	.attr("y",200)
+					 	.attr("font-family","sans-serif")
+					  	.attr("font-size","16px")
+					  	.attr("fill","black")
+					  	.text(sampleOne.concat(sampleTwo)[i])
+					
+					if (i < sampleSize){
+						perSVG.append("text")
+							.attr("x",30+(70*i)+10)
+							.attr("y",180)
+							.attr("font-family","sans-serif")
+							.attr("font-size","16px")
+							.attr("fill","rgb(255,209,0)")
+							.text("M")	
+					} else {
+						perSVG.append("text")
+							.attr("x",30+(70*i)+10)
+							.attr("y",180)
+							.attr("font-family","sans-serif")
+							.attr("font-size","16px")
+							.attr("fill","rgb(39,116,174)")
+							.text("F")	
+					}
+					  	
+				}
+
+				drawPermutHist(Math.round(svgWidth/2),	// xCoor
+								130,					// yCoor
+								80,						// h
+								svgWidth*0.5,			// w
+								perSVG,					// svg
+								[avg(sampleOne)]);		// values
+
+				function runPermutation(){
+			
+					d3.selectAll("svg").remove();
+			
+				}
+			
+				// runPermutation();
+		
+				d3.select("#permute")
+				  .on("click",function(){
+
+				  });
+	
+			</script>
+ 		</section>
+    </body>
+</html>
