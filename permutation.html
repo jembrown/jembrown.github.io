@@ -76,14 +76,17 @@
 
 				var obsDiff = [avg(sampleTwo)-avg(sampleOne)];
 
-				// Array to keep track of differences in averages for permutations
-				var perDiffs = [2.1,1.8];
+				// Arrays to keep track of permutation results
+				var perLabels = [];
+				var perDiffs = [];
+
+				var sampleLabels = ["M","M","M","M","M","F","F","F","F","F"];
 
 				function runPermutation(){
 			
 					d3.selectAll("svg").remove();
 			
-					var svgWidth = 800;	
+					var svgWidth = 1000;	
 					var svgHeight = 400;
 
 					var perSVG = d3.select("body")		// Create new svg
@@ -95,7 +98,7 @@
 					drawPermutHist(Math.round(svgWidth/2),		// xCoor
 									130,						// yCoor
 									80,							// h
-									svgWidth*0.5,				// w
+									svgWidth*0.4,				// w
 									perSVG,						// svg
 									obsDiff.concat(perDiffs));	// values
 
@@ -126,7 +129,37 @@
 						} // close if...else
 					} // close for loop across samples
 			
-					
+					perSVG.append("text")
+						  .attr("x",30+(65*sampleSize*2)+10)
+						  .attr("y",230)
+						  .attr("font-family","sans-serif")
+						  .attr("font-size","16px")
+						  .attr("fill","rgb(255,209,0)")
+						  .text("M_avg = ")
+					perSVG.append("text")
+						  .attr("x",30+(65*sampleSize*2)+75)
+						  .attr("y",230)
+						  .attr("font-family","sans-serif")
+						  .attr("font-size","16px")
+						  .attr("fill","rgb(255,209,0)")
+						  .text(Math.round(avg(sampleOne)*10)/10)
+						  
+					perSVG.append("text")
+						  .attr("x",30+(65*sampleSize*2)+115)
+						  .attr("y",230)
+						  .attr("font-family","sans-serif")
+						  .attr("font-size","16px")
+						  .attr("fill","rgb(39,116,174)")
+						  .text("F_avg = ")
+					perSVG.append("text")
+						  .attr("x",30+(65*sampleSize*2)+175)
+						  .attr("y",230)
+						  .attr("font-family","sans-serif")
+						  .attr("font-size","16px")
+						  .attr("fill","rgb(39,116,174)")
+						  .text(Math.round(avg(sampleTwo)*10)/10)
+
+
 			
 				}
 			
@@ -134,7 +167,8 @@
 		
 				d3.select("#permute")
 				  .on("click",function(){
-				  	 console.log("permute button clicked.");
+				  	 permuteLabels(perLabels,copy(sampleLabels));
+				  	 calcPerDiffs(sampleOne.concat(sampleTwo),perDiffs,perLabels[perLabels.length-1]);
 					 runPermutation();
 				  });
 	

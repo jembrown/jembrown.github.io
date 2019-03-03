@@ -1,6 +1,6 @@
 // General utility javascript library created by Jeremy M. Brown
 
-function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
+function drawPermutHist(xCoor,yCoor,h,w,svg,vals){	
 	// First element of vals is observed diff
 	
 	// "..." is the spread operator - converts array into its component values
@@ -93,8 +93,44 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 	   .attr("y1",yCoor)
 	   .attr("y2",10)
 	   .attr("stroke","red")
-	   .attr("stroke-width",2)
+	   .attr("stroke-width",6)
 
+}
+
+function permuteLabels(perLabels,origLabels){
+	var newLabels = [];
+	while (origLabels.length > 0){
+		var index = Math.floor(Math.random()*origLabels.length);
+		newLabels.push(origLabels.splice(index,1)[0]);
+	}
+	perLabels.push(newLabels);
+}
+
+function calcPerDiffs(vals,diffArray,newLabels){
+	var mVals = [];
+	var fVals = [];
+
+	for (let i = 0; i < newLabels.length; i++){
+		if (newLabels[i] == "M"){
+			mVals.push(vals[i]);
+		} else {
+			fVals.push(vals[i]);
+		}
+	}
+
+	var newDiff = avg(fVals) - avg(mVals);
+
+	diffArray.push(newDiff);
+}
+
+function copy(o) {
+   var output, v, key;
+   output = Array.isArray(o) ? [] : {};
+   for (key in o) {
+       v = o[key];
+       output[key] = (typeof v === "object") ? copy(v) : v;
+   }
+   return output;
 }
 
 function avg(arr){
