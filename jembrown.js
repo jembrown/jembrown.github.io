@@ -1,13 +1,14 @@
 // General utility javascript library created by Jeremy M. Brown
 
 function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
+	// First element of vals is observed diff
 	
 	// "..." is the spread operator - converts array into its component values
 	var spread = Math.max(...vals) - Math.min(...vals);
 
 	if (vals.length > 1){
-		var xMin = Math.min(...vals) - Math.round(spread * 0.1);
-		var xMax = Math.max(...vals) + Math.round(spread * 0.1);
+		var xMin = Math.min(...vals) - (spread * 0.1);
+		var xMax = Math.max(...vals) + (spread * 0.1);
 	} else {
 		var xMin = vals[0]-1.0;
 		var xMax = vals[0]+1.0;
@@ -22,10 +23,45 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 		.attr("stroke","black")
 		.attr("stroke-width",2);
 
+	var xScaleFactor = w/(xMax-xMin);
+
+	// Add x-axis ticks and values
+	if (vals.length > 1){
+		svg.append("text")
+		   .attr("y",yCoor+15)
+		   .attr("x",(xCoor-(w/2))+((xMin-xMin)*xScaleFactor)-10)
+		   .attr("font-family","sans-serif")
+		   .attr("font-size","14px")
+		   .attr("fill","black")
+		   .text(Math.round(xMin*100)/100)
+		svg.append("text")
+		   .attr("y",yCoor+15)
+		   .attr("x",(xCoor-(w/2))+((xMax-xMin)*xScaleFactor)-10)
+		   .attr("font-family","sans-serif")
+		   .attr("font-size","14px")
+		   .attr("fill","black")
+		   .text(Math.round(xMax*100)/100)
+		svg.append("text")
+		   .attr("y",yCoor+15)
+		   .attr("x",(xCoor-(w/2))+((xMax-xMin)*0.5*xScaleFactor)-10)
+		   .attr("font-family","sans-serif")
+		   .attr("font-size","14px")
+		   .attr("fill","black")
+		   .text(Math.round(((xMin+xMax)/2.0)*100)/100)
+	} else {
+		svg.append("text")
+		   .attr("y",yCoor+15)
+		   .attr("x",(xCoor-(w/2))+((vals[0]-xMin)*xScaleFactor)-10)
+		   .attr("font-family","sans-serif")
+		   .attr("font-size","14px")
+		   .attr("fill","black")
+		   .text(Math.round(vals[0]*10)/10)
+	}
+
 	// Label x-axis
 	svg.append("text")
 	   .attr("x",xCoor-50)
-	   .attr("y",yCoor+20)		 	
+	   .attr("y",yCoor+40)		 	
 	   .attr("font-family","sans-serif")
 	   .attr("font-size","16px")
 	   .attr("fill","black")
@@ -49,6 +85,15 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 	   .attr("fill","black")
 	   .attr("transform","rotate(-90,"+(xCoor-(w/2)-10)+","+(yCoor-25)+")")
 	   .text("Frequency")
+
+	// Show observed diff
+	svg.append("line")
+	   .attr("x1",(xCoor-(w/2))+((vals[0]-xMin)*xScaleFactor))
+	   .attr("x2",(xCoor-(w/2))+((vals[0]-xMin)*xScaleFactor))
+	   .attr("y1",yCoor)
+	   .attr("y2",10)
+	   .attr("stroke","red")
+	   .attr("stroke-width",2)
 
 }
 

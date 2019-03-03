@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>Permutation of Two Group Labels</title>
+        <title>Permutation Test for Sexual Dimorphism</title>
         
         <!-- d3 library for data visualization and animation -->
         <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
@@ -14,7 +14,7 @@
         <!-- script type="text/javascript" src="https://jembrown.github.io/jembrown.js"></script -->
         <script type="text/javascript" src="jembrown.js"></script>
         
-		<!-- style type="text/css">
+		<style type="text/css">
         	
         	@font-face { font-family: Glober; font-weight: semibold; src: url('Glober-SemiBold.otf'); }
         	        	
@@ -27,11 +27,11 @@
         		font-family: Glober;
         		font-size: 14px;
         	}
-        </style -->
+        </style>
     </head>
     <body>
     
-		<h1>Permutation Test for Comparing Means of Two Groups</h1>
+		<h1>Permutation Test for Sexual Dimorphism</h1>
 	
 		<section id="controls">
 			<button id="permute"
@@ -42,9 +42,12 @@
 		<section id = "visualization">
 			<script>
 			
-				var svgWidth = 800;	
-				var svgHeight = 400;
-
+				// TO DO:
+				//	 - Add box around observations
+				//	 - ADD M_avg and F_avg and diff values 
+				//	 - Code for permutation histogram (fixed # of bins)
+			
+				// Setting up data sets
 				var sampleSize = 5;
 
 				var sampleOne = [];
@@ -69,62 +72,70 @@
 					let newSamp = Math.round(jStat.normal.sample(meanTwo,sdTwo)*100)/100;
 					sampleTwo.push(newSamp);
 					labelTwo.push("F")				
-				}
+				}				
 
-				var perSVG = d3.select("body")		// Create new svg
-								.select("#visualization")
-								.append("svg")
-								.attr("width",svgWidth)
-								.attr("height",svgHeight);
+				var obsDiff = [avg(sampleTwo)-avg(sampleOne)];
 
-				for (let i = 0; i < sampleSize*2; i++){
-					
-					perSVG.append("text")
-					  	.attr("x",30+(70*i))
-					  	.attr("y",200)
-					 	.attr("font-family","sans-serif")
-					  	.attr("font-size","16px")
-					  	.attr("fill","black")
-					  	.text(sampleOne.concat(sampleTwo)[i])
-					
-					if (i < sampleSize){
-						perSVG.append("text")
-							.attr("x",30+(70*i)+10)
-							.attr("y",180)
-							.attr("font-family","sans-serif")
-							.attr("font-size","16px")
-							.attr("fill","rgb(255,209,0)")
-							.text("M")	
-					} else {
-						perSVG.append("text")
-							.attr("x",30+(70*i)+10)
-							.attr("y",180)
-							.attr("font-family","sans-serif")
-							.attr("font-size","16px")
-							.attr("fill","rgb(39,116,174)")
-							.text("F")	
-					}
-					  	
-				}
-
-				drawPermutHist(Math.round(svgWidth/2),	// xCoor
-								130,					// yCoor
-								80,						// h
-								svgWidth*0.5,			// w
-								perSVG,					// svg
-								[avg(sampleOne)]);		// values
+				// Array to keep track of differences in averages for permutations
+				var perDiffs = [2.1,1.8];
 
 				function runPermutation(){
 			
 					d3.selectAll("svg").remove();
 			
+					var svgWidth = 800;	
+					var svgHeight = 400;
+
+					var perSVG = d3.select("body")		// Create new svg
+									.select("#visualization")
+									.append("svg")
+									.attr("width",svgWidth)
+									.attr("height",svgHeight);
+
+					drawPermutHist(Math.round(svgWidth/2),		// xCoor
+									130,						// yCoor
+									80,							// h
+									svgWidth*0.5,				// w
+									perSVG,						// svg
+									obsDiff.concat(perDiffs));	// values
+
+					for (let i = 0; i < sampleSize*2; i++){
+						perSVG.append("text")
+							.attr("x",30+(65*i))
+							.attr("y",230)
+							.attr("font-family","sans-serif")
+							.attr("font-size","16px")
+							.attr("fill","black")
+							.text(sampleOne.concat(sampleTwo)[i])
+						if (i < sampleSize){
+							perSVG.append("text")
+								.attr("x",30+(65*i)+10)
+								.attr("y",210)
+								.attr("font-family","sans-serif")
+								.attr("font-size","16px")
+								.attr("fill","rgb(255,209,0)")
+								.text("M")	
+						} else {
+							perSVG.append("text")
+								.attr("x",30+(65*i)+10)
+								.attr("y",210)
+								.attr("font-family","sans-serif")
+								.attr("font-size","16px")
+								.attr("fill","rgb(39,116,174)")
+								.text("F")	
+						} // close if...else
+					} // close for loop across samples
+			
+					
+			
 				}
 			
-				// runPermutation();
+				runPermutation();
 		
 				d3.select("#permute")
 				  .on("click",function(){
-
+				  	 console.log("permute button clicked.");
+					 runPermutation();
 				  });
 	
 			</script>
