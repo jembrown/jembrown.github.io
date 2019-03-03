@@ -14,6 +14,28 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 		var xMax = vals[0]+1.0;
 	}
 	
+	// Setting cutoffs for histogram boxes
+	// 11 cutoffs for 10 boxes
+	var cutoffs = [xMin];
+	for (let i = 1; i < 11; i++){
+		cutoffs.push( xMin + (spread * 0.1 * i) );
+	}
+
+	// Counting number of observations in each bin
+	var counts = [0,0,0,0,0,0,0,0,0,0];
+	for (let i = 1; i < 11; i++){ // Looping across bins
+		for (let j = 1; j < vals.length; j++){	// Skips first "empirical" value
+			if ( (vals[j] <= cutoffs[i]) && (vals[j] > cutoffs[i-1]) ){
+				counts[i-1] += 1;
+			}
+		}
+	}
+	
+	var freqs = [0,0,0,0,0,0,0,0,0,0];
+	for (let i = 0; i < 10; i++){
+		freqs[i] = counts[i]/(vals.length-1);
+	}
+	
 	// Draw x-axis
 	svg.append("line")
 		.attr("x1",xCoor-(w/2))
@@ -86,6 +108,36 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 	   .attr("transform","rotate(-90,"+(xCoor-(w/2)-10)+","+(yCoor-25)+")")
 	   .text("Frequency")
 
+	// Label y-axis values
+	if (vals.length > 1){
+		svg.append("text")
+		   .attr("x",xCoor-(w/2)-33)
+		   .attr("y",18)
+		   .attr("font-family","sans-serif")
+		   .attr("font-size","16px")
+		   .attr("fill","black")
+		   .text(Math.round(Math.max(...freqs)*100)/100);
+		svg.append("text")
+		   .attr("x",xCoor-(w/2)-33)
+		   .attr("y",yCoor+5)
+		   .attr("font-family","sans-serif")
+		   .attr("font-size","16px")
+		   .attr("fill","black")
+		   .text("0.0");
+	}
+
+	// Draw histogram boxes
+	if (vals.length > 1){
+		for (let i = 1; i < 11; i++){
+			svg.append("rect")
+			   .attr("x",xCoor-(w/2)+(w*0.1*(i-1)))
+			   .attr("y",yCoor-((freqs[i-1]/Math.max(...freqs)) * (yCoor-10)))
+			   .attr("width",0.1 * w)
+			   .attr("height",(freqs[i-1]/Math.max(...freqs)) * (yCoor-10) )
+			   .attr("fill","blue")
+		}
+	}
+
 	// Show observed diff
 	svg.append("line")
 	   .attr("x1",(xCoor-(w/2))+((vals[0]-xMin)*xScaleFactor))
@@ -93,7 +145,7 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 	   .attr("y1",yCoor)
 	   .attr("y2",10)
 	   .attr("stroke","red")
-	   .attr("stroke-width",6)
+	   .attr("stroke-width",3)
 
 }
 
@@ -123,6 +175,8 @@ function calcPerDiffs(vals,diffArray,newLabels){
 	diffArray.push(newDiff);
 }
 
+// Function from: https://www.codementor.io/avijitgupta/deep-copying-in-js-7x6q8vh5d
+// Although those authors also copied it from an (unknown) source?
 function copy(o) {
    var output, v, key;
    output = Array.isArray(o) ? [] : {};
