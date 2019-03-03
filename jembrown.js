@@ -9,9 +9,11 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 	if (vals.length > 1){
 		var xMin = Math.min(...vals) - (spread * 0.1);
 		var xMax = Math.max(...vals) + (spread * 0.1);
+		spread = xMax - xMin;
 	} else {
 		var xMin = vals[0]-1.0;
 		var xMax = vals[0]+1.0;
+		spread = xMax - xMin;
 	}
 	
 	// Setting cutoffs for histogram boxes
@@ -23,10 +25,16 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 		cutoffs.push( xMin + (spread * (1.0/nBoxes) * i) );
 	}
 
+	console.log(vals);
+	console.log(cutoffs);
+
 	// Counting number of observations in each bin
 	var counts = [];	
-	for (let i = 1; i < (nBoxes+1); i++){ // Looping across bins
+	for (let i = 0; i < nBoxes; i++){
 		counts.push(0);
+	}
+	
+	for (let i = 1; i < (nBoxes+1); i++){ // Looping across bins
 		for (let j = 1; j < vals.length; j++){	// Skips first "empirical" value
 			if ( (vals[j] <= cutoffs[i]) && (vals[j] > cutoffs[i-1]) ){
 				counts[i-1] += 1;
@@ -34,9 +42,14 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 		}
 	}
 	
+	console.log(counts);
+	
 	var freqs = [];
 	for (let i = 0; i < nBoxes; i++){
 		freqs.push(0);
+	}
+	
+	for (let i = 0; i < nBoxes; i++){
 		freqs[i] = counts[i]/(vals.length-1);
 	}
 	

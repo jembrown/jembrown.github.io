@@ -350,7 +350,7 @@
 								  .attr("fill","rgba(0,0,255,0.5)")
 								  .text(Math.round(perDiffs[i]*100)/100)				  
 							
-							if (perDiffs[i] > obsDiff){
+							if (perDiffs[i] >= obsDiff){
 								perSVG.append("text")
 									  .attr("x",30+(65*sampleSize*2)+350)
 								  	  .attr("y",210+(spaceFactor*(i+1))+69)
