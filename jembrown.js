@@ -15,15 +15,18 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 	}
 	
 	// Setting cutoffs for histogram boxes
-	// 11 cutoffs for 10 boxes
+
+	var nBoxes = 20;
+
 	var cutoffs = [xMin];
-	for (let i = 1; i < 11; i++){
-		cutoffs.push( xMin + (spread * 0.1 * i) );
+	for (let i = 1; i < (nBoxes+1); i++){
+		cutoffs.push( xMin + (spread * (1.0/nBoxes) * i) );
 	}
 
 	// Counting number of observations in each bin
-	var counts = [0,0,0,0,0,0,0,0,0,0];
-	for (let i = 1; i < 11; i++){ // Looping across bins
+	var counts = [];	
+	for (let i = 1; i < (nBoxes+1); i++){ // Looping across bins
+		counts.push(0);
 		for (let j = 1; j < vals.length; j++){	// Skips first "empirical" value
 			if ( (vals[j] <= cutoffs[i]) && (vals[j] > cutoffs[i-1]) ){
 				counts[i-1] += 1;
@@ -31,8 +34,9 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 		}
 	}
 	
-	var freqs = [0,0,0,0,0,0,0,0,0,0];
-	for (let i = 0; i < 10; i++){
+	var freqs = [];
+	for (let i = 0; i < nBoxes; i++){
+		freqs.push(0);
 		freqs[i] = counts[i]/(vals.length-1);
 	}
 	
@@ -128,11 +132,11 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 
 	// Draw histogram boxes
 	if (vals.length > 1){
-		for (let i = 1; i < 11; i++){
+		for (let i = 1; i < (nBoxes+1); i++){
 			svg.append("rect")
-			   .attr("x",xCoor-(w/2)+(w*0.1*(i-1)))
+			   .attr("x",xCoor-(w/2)+(w * (1.0/nBoxes) * (i-1)))
 			   .attr("y",yCoor-((freqs[i-1]/Math.max(...freqs)) * (yCoor-10)))
-			   .attr("width",0.1 * w)
+			   .attr("width",(1.0/nBoxes) * w)
 			   .attr("height",(freqs[i-1]/Math.max(...freqs)) * (yCoor-10) )
 			   .attr("fill","rgba(0,0,255,0.5)")
 		}
@@ -158,7 +162,7 @@ function permuteLabels(perLabels,origLabels){
 	perLabels.push(newLabels);
 }
 
-function calcPerDiffs(vals,diffArray,newLabels){
+function calcPerDiffs(vals,diffArray,newLabels,mArray,fArray){
 	var mVals = [];
 	var fVals = [];
 
@@ -172,6 +176,8 @@ function calcPerDiffs(vals,diffArray,newLabels){
 
 	var newDiff = avg(fVals) - avg(mVals);
 
+	mArray.push(avg(mVals));
+	fArray.push(avg(fVals));
 	diffArray.push(newDiff);
 }
 

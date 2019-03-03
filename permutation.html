@@ -38,16 +38,15 @@
 			<button id="permute"
 					style="display: inline-block; text-align: right">Permute
 			</button>
+			<button id="permuteOneHundred"
+					style="display: inline-block; text-align: right">Permute x100
+			</button>
+
 		</section>
 		<br>
 		<section id = "visualization">
 			<script>
-			
-				// TO DO:
-				//	 - Add box around observations
-				//	 - ADD M_avg and F_avg and diff values 
-				//	 - Code for permutation histogram (fixed # of bins)
-			
+						
 				// Setting up data sets
 				var sampleSize = 5;
 
@@ -80,6 +79,8 @@
 				// Arrays to keep track of permutation results
 				var perLabels = [];
 				var perDiffs = [];
+				var mAvgs = [];
+				var fAvgs = [];
 
 				var sampleLabels = ["M","M","M","M","M","F","F","F","F","F"];
 
@@ -88,13 +89,29 @@
 					d3.selectAll("svg").remove();
 			
 					var svgWidth = 1200;	
-					var svgHeight = 1000;
+					var svgHeight = 15000;
 
 					var perSVG = d3.select("body")		// Create new svg
 									.select("#visualization")
 									.append("svg")
 									.attr("width",svgWidth)
 									.attr("height",svgHeight);
+
+					// Permutation Counter
+					perSVG.append("text")
+						  .attr("x",70)
+						  .attr("y",165)
+						  .attr("font-family","sans-serif")
+						  .attr("font-size","20px")
+						  .attr("fill","black")
+						  .text("Number of Permutations = ")
+					perSVG.append("text")
+						  .attr("x",310)
+						  .attr("y",165)
+						  .attr("font-family","sans-serif")
+						  .attr("font-size","20px")
+						  .attr("fill","black")
+						  .text(perDiffs.length)
 
 					// Cartoon of male population
 					perSVG.append("rect")
@@ -207,40 +224,132 @@
 						  .attr("font-family","sans-serif")
 						  .attr("font-size","16px")
 						  .attr("fill","rgb(255,209,0)")
-						  .text(Math.round(avg(sampleOne)*10)/10)
+						  .text(Math.round(avg(sampleOne)*100)/100)
 						  
 					perSVG.append("text")
-						  .attr("x",30+(65*sampleSize*2)+115)
+						  .attr("x",30+(65*sampleSize*2)+125)
 						  .attr("y",230)
 						  .attr("font-family","sans-serif")
 						  .attr("font-size","16px")
 						  .attr("fill","rgb(39,116,174)")
 						  .text("Avg. F = ")
 					perSVG.append("text")
-						  .attr("x",30+(65*sampleSize*2)+175)
+						  .attr("x",30+(65*sampleSize*2)+190)
 						  .attr("y",230)
 						  .attr("font-family","sans-serif")
 						  .attr("font-size","16px")
 						  .attr("fill","rgb(39,116,174)")
-						  .text(Math.round(avg(sampleTwo)*10)/10)
+						  .text(Math.round(avg(sampleTwo)*100)/100)
 
 					perSVG.append("text")
-						  .attr("x",30+(65*sampleSize*2)+220)
+						  .attr("x",30+(65*sampleSize*2)+240)
 						  .attr("y",230)
 						  .attr("font-family","sans-serif")
 						  .attr("font-size","16px")
-						  .attr("fill","black")
+						  .attr("fill","red")
 						  .text("Obs. Diff. = ")
 					perSVG.append("text")
-						  .attr("x",30+(65*sampleSize*2)+305)
+						  .attr("x",30+(65*sampleSize*2)+325)
 						  .attr("y",230)
 						  .attr("font-family","sans-serif")
 						  .attr("font-size","16px")
-						  .attr("fill","black")
+						  .attr("fill","red")
 						  .text(Math.round(obsDiff*100)/100)				  
+						  
+					perSVG.append("line")
+						  .attr("x1",10)
+						  .attr("x2",1050)
+						  .attr("y1",260)
+						  .attr("y2",260)
+						  .attr("stroke","black")
+						  .attr("stroke-width",1)
+						  
+					var spaceFactor = 20;
+						  
+					if (perLabels.length > 0){
+						for (let i=0; i<perLabels.length; i++){
+							for (let j=0; j<sampleSize*2; j++){
+								if (perLabels[i][j] == "M"){
+									perSVG.append("text")
+										.attr("x",30+(65*j)+10)
+										.attr("y",210+(spaceFactor*(i+1))+50)
+										.attr("font-family","sans-serif")
+										.attr("font-size","16px")
+										.attr("fill","rgb(255,209,0)")
+										.text(perLabels[i][j])
+								} else {
+									perSVG.append("text")
+										.attr("x",30+(65*j)+10)
+										.attr("y",210+(spaceFactor*(i+1))+50)
+										.attr("font-family","sans-serif")
+										.attr("font-size","16px")
+										.attr("fill","rgb(39,116,174)")
+										.text(perLabels[i][j])
+								}
+							}
+							
+							// Permuted male average
+							perSVG.append("text")
+								  .attr("x",30+(65*sampleSize*2)+10)
+								  .attr("y",210+(spaceFactor*(i+1))+50)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","16px")
+								  .attr("fill","rgb(255,209,0)")
+								  .text("Avg. M = ")
+							perSVG.append("text")
+								  .attr("x",30+(65*sampleSize*2)+75)
+								  .attr("y",210+(spaceFactor*(i+1))+50)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","16px")
+								  .attr("fill","rgb(255,209,0)")
+								  .text(Math.round(mAvgs[i]*100)/100)
+								  
+							// Permuted female average
+							perSVG.append("text")
+								  .attr("x",30+(65*sampleSize*2)+125)
+								  .attr("y",210+(spaceFactor*(i+1))+50)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","16px")
+								  .attr("fill","rgb(39,116,174)")
+								  .text("Avg. F = ")
+							perSVG.append("text")
+								  .attr("x",30+(65*sampleSize*2)+190)
+								  .attr("y",210+(spaceFactor*(i+1))+50)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","16px")
+								  .attr("fill","rgb(39,116,174)")
+								  .text(Math.round(fAvgs[i]*100)/100)
 
+							// Permuted difference in averages
+							perSVG.append("text")
+								  .attr("x",30+(65*sampleSize*2)+240)
+								  .attr("y",210+(spaceFactor*(i+1))+50)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","16px")
+								  .attr("fill","rgba(0,0,255,0.5)")
+								  .text("Diff. = ")
+							perSVG.append("text")
+								  .attr("x",30+(65*sampleSize*2)+290)
+								  .attr("y",210+(spaceFactor*(i+1))+50)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","16px")
+								  .attr("fill","rgba(0,0,255,0.5)")
+								  .text(Math.round(perDiffs[i]*100)/100)				  
+							
+							if (perDiffs[i] > obsDiff){
+								perSVG.append("text")
+									  .attr("x",30+(65*sampleSize*2)+350)
+								  	  .attr("y",210+(spaceFactor*(i+1))+69)
+								  	  .attr("font-family","sans-serif")
+								  	  .attr("font-size","48px")
+								  	  .attr("fill","red")
+								  	  .text("***")
 
-			
+							}
+							
+						}
+					}
+						  
 				}
 			
 				runPermutation();
@@ -248,8 +357,17 @@
 				d3.select("#permute")
 				  .on("click",function(){
 				  	 permuteLabels(perLabels,copy(sampleLabels));
-				  	 calcPerDiffs(sampleOne.concat(sampleTwo),perDiffs,perLabels[perLabels.length-1]);
+				  	 calcPerDiffs(sampleOne.concat(sampleTwo),perDiffs,perLabels[perLabels.length-1],mAvgs,fAvgs);
 					 runPermutation();
+				  });
+
+				d3.select("#permuteOneHundred")
+				  .on("click",function(){
+				  	 for (let i=0; i<100; i++){
+						 permuteLabels(perLabels,copy(sampleLabels));
+						 calcPerDiffs(sampleOne.concat(sampleTwo),perDiffs,perLabels[perLabels.length-1],mAvgs,fAvgs);
+						 runPermutation();
+					 }
 				  });
 	
 			</script>
