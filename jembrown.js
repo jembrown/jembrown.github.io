@@ -134,7 +134,7 @@ function drawPermutHist(xCoor,yCoor,h,w,svg,vals){
 			   .attr("y",yCoor-((freqs[i-1]/Math.max(...freqs)) * (yCoor-10)))
 			   .attr("width",0.1 * w)
 			   .attr("height",(freqs[i-1]/Math.max(...freqs)) * (yCoor-10) )
-			   .attr("fill","blue")
+			   .attr("fill","rgba(0,0,255,0.5)")
 		}
 	}
 
