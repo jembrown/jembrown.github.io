@@ -55,11 +55,17 @@
 					class="button"
 					style="display: inline-block; text-align: right">Permute x100
 			</button>
-
+			<button id="pVal"
+					class="button"
+					style="display: inline-block; text-align: right">Show Estimated P-value
+			</button>
 		</section>
 		<br>
 		<section id = "visualization">
 			<script>
+						
+				var showPVal = false;
+				var pValCount = 0;
 						
 				// Setting up data sets
 				var sampleSize = 5;
@@ -79,7 +85,7 @@
 				var sampleTwo = [];
 				var labelTwo = [];
 				
-				var meanTwo = 12;
+				var meanTwo = 11.5;
 				var sdTwo = 1;
 				
 				for (let i = 0; i < sampleSize; i++){
@@ -110,6 +116,47 @@
 									.append("svg")
 									.attr("width",svgWidth)
 									.attr("height",svgHeight);
+
+					// Display P-value (if turned on)
+					if (showPVal){
+						if (perDiffs.length > 0){
+							perSVG.append("text")
+								  .attr("x",400)
+								  .attr("y",60)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","20px")
+								  .attr("fill","red")
+								  .text("P-value")
+							pValCount = 0;
+							for (let i = 0; i < perDiffs.length; i++){
+								if (perDiffs[i] >= obsDiff){
+									pValCount += 1;
+								}
+							}
+							perSVG.append("text")
+								  .attr("x",410)
+								  .attr("y",80)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","20px")
+								  .attr("fill","red")
+								  .text(Math.round((pValCount/perDiffs.length)*1000)/1000)
+						} else {
+							perSVG.append("text")
+								  .attr("x",400)
+								  .attr("y",60)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","20px")
+								  .attr("fill","red")
+								  .text("Permute")
+							perSVG.append("text")
+								  .attr("x",410)
+								  .attr("y",80)
+								  .attr("font-family","sans-serif")
+								  .attr("font-size","20px")
+								  .attr("fill","red")
+								  .text("First!")	
+						}						  
+					}
 
 					// Permutation Counter
 					perSVG.append("text")
@@ -382,6 +429,13 @@
 						 calcPerDiffs(sampleOne.concat(sampleTwo),perDiffs,perLabels[perLabels.length-1],mAvgs,fAvgs);
 						 runPermutation();
 					 }
+				  });
+
+				d3.select("#pVal")
+				  .on("click",function(){
+				  		console.log(showPVal);
+						showPVal = !showPVal;
+						runPermutation();
 				  });
 	
 			</script>
