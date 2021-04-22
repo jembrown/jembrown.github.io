@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Display TreeScaper Networks</title>
+        
+        <!-- d3 library for data visualization and animation -->
+        <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+
+        <!-- jstat library for probability distributions -->
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+        
+        <!-- phyleaux library for phylogenetic objects and functions -->
+        <script type="text/javascript" src="https://jembrown.github.io/phyleaux.js"></script>
+                
+		<style type="text/css">
+        	
+        	@font-face { font-family: Glober; font-weight: semibold; src: url('Glober-SemiBold.otf'); }
+        	        	
+        	h1 {
+        		font-family: Glober;
+        		font-size: 24px;
+        	}
+        	
+        	h2 {
+        		font-family: Glober;
+        		font-size: 18px;
+        	}
+
+        	label {
+        		font-size: 16px;
+        	}
+
+			/*  Set slider width (% of window width) */
+        	input {
+        		width: 50%
+        	}
+        	           	     
+        	/* Dropdown Button */
+			.dropbtn {
+				background-color: white;
+				color: black;
+				padding: 4px;
+				font-size: 14px;
+				border: 1px solid grey;
+				border-radius: 5px;
+				cursor: pointer;
+			}
+
+			/* Dropdown button on hover & focus */
+			.dropbtn:hover, .dropbtn:focus {
+				background-color: "#f1f1f1";
+			}
+
+			/* The container <div> - needed to position the dropdown content */
+			.dropdown {
+				position: relative;
+				display: inline-block;
+			}
+
+			/* Dropdown Content (Hidden by Default) */
+			.dropdown-content {
+				display: none;
+				position: absolute;
+				background-color: #f1f1f1;
+				min-width: 70px;
+				width: 100%;
+				box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+				z-index: 1;
+			}
+
+			/* Links inside the dropdown */
+			.dropdown-content a, button {
+				color: black;
+				padding: 12px 16px;
+				text-decoration: none;
+				display: block;
+			}
+
+			/* Change color of dropdown links on hover */
+			.dropdown-content a:hover {background-color: #ddd}
+
+			/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+			.show {display:block;}
+        	        	         	
+        </style>
+    </head>
+    <body>
+    
+    	<h1>Plot Bipartition and Tree Networks from TreeScaper</h1>
+    
+       <script>
+
+			var dataset = {};
+
+			var nodeColor = "grey";
+			var posEdgeColor = "blue";
+			var negEdgeColor = "red";
+
+            var nodeStyle = "circles";
+
+			/* Functions called by options from the Node Color dropdown */
+		
+			var changeNodeColorRed = function(){
+				nodeColor = "red";
+				refreshNetwork();
+			}
+
+			var changeNodeColorOrange = function(){
+				nodeColor = "orange";
+				refreshNetwork();
+			}
+		
+			var changeNodeColorBlue = function(){
+				nodeColor = "blue";
+				refreshNetwork();
+			}
+
+			var changeNodeColorGreen = function(){
+				nodeColor = "green";
+				refreshNetwork();
+			}
+
+			var changeNodeColorGrey = function(){
+				nodeColor = "grey";
+				refreshNetwork();
+			}
+
+			var changeNodeColorBlack = function(){
+				nodeColor = "black";
+				refreshNetwork();
+			}
+
+			/* Functions called by options from the Edge Color (Positive) dropdown */
+		
+			var changePosEdgeColorRed = function(){
+				posEdgeColor = "red";
+				refreshNetwork();
+			}
+		
+			var changePosEdgeColorOrange = function(){
+				posEdgeColor = "orange";
+				refreshNetwork();
+			}
+		
+			var changePosEdgeColorBlue = function(){
+				posEdgeColor = "blue";
+				refreshNetwork();
+			}
+
+			var changePosEdgeColorGreen = function(){
+				posEdgeColor = "green";
+				refreshNetwork();
+			}
+
+			var changePosEdgeColorGrey = function(){
+				posEdgeColor = "grey";
+				refreshNetwork();
+			}
+
+			var changePosEdgeColorBlack = function(){
+				posEdgeColor = "black";
+				refreshNetwork();
+			}
+
+			/* Functions called by options from the Edge Color (Negative) dropdown */
+		
+			var changeNegEdgeColorRed = function(){
+				negEdgeColor = "red";
+				refreshNetwork();
+			}
+		
+			var changeNegEdgeColorOrange = function(){
+				negEdgeColor = "orange";
+				refreshNetwork();
+			}
+		
+			var changeNegEdgeColorBlue = function(){
+				negEdgeColor = "blue";
+				refreshNetwork();
+			}
+
+			var changeNegEdgeColorGreen = function(){
+				negEdgeColor = "green";
+				refreshNetwork();
+			}
+
+			var changeNegEdgeColorGrey = function(){
+				negEdgeColor = "grey";
+				refreshNetwork();
+			}
+
+			var changeNegEdgeColorBlack = function(){
+				negEdgeColor = "black";
+				refreshNetwork();
+			}
+		
+            var changeNodesToCircles = function(){
+                nodeStyle = "circles";
+            	refreshNetwork();
+            }
+
+            var changeNodesToNumbers = function(){
+            	nodeStyle = "numbers";
+            	refreshNetwork();
+            }
+
+			// Function to quickly replot network after changing a display parameter
+
+			var refreshNetwork = function() {
+				d3.select("svg").selectAll("line").remove();
+				d3.select("svg").selectAll("circle").remove();
+				d3.select("svg").selectAll("text").remove();
+				plotNetwork( svg = d3.select("svg"),
+							 w = 600, 
+							 h = 600, 
+							 r = d3.select("#nodeRadius").property("value"),
+							 edgeScaling = (parseFloat(d3.select("#fineEdgeScaling").property("value")) + 
+										   parseFloat(d3.select("#grossEdgeScaling").property("value"))),
+							 edgeForceScaling = d3.select("#edgeForceScaling").property("value"),
+							 nodeForceScaling = -1*d3.select("#nodeForceScaling").property("value"));
+			}
+
+			// Function to read in file of covariances or affinities
+			// Expects this file to contain values along and below the diagonal (not above)
+
+			var handleFiles = function(files){
+				var reader = new FileReader();						// Instantiates file reader
+				reader.onload = function(event) {					// Defines what happens when file is done loading
+					parseMatrix(reader.result);
+					refreshNetwork();
+					/*d3.select("svg").selectAll("line").remove();
+					d3.select("svg").selectAll("circle").remove();
+					plotNetwork( svg = d3.select("svg"),
+								 w = 600, 
+								 h = 600, 
+								 r = d3.select("#nodeRadius").property("value"),
+								 edgeScaling = (parseFloat(d3.select("#fineEdgeScaling").property("value")) + 
+											   parseFloat(d3.select("#grossEdgeScaling").property("value"))),
+								 edgeForceScaling = d3.select("#edgeForceScaling").property("value"),
+								 nodeForceScaling = -1*d3.select("#nodeForceScaling").property("value"));*/
+				};
+				reader.readAsText(files[0]);		// Begins reading in the file - will only accept one file.
+			}
+
+			// The parseMatrix() function can read in either an affinity or a covariance network from TreeScaper
+			//	 and create the network format expected by d3 (see default example below).
+
+			var parseMatrix = function(matrixText){
+			
+				// Make array out of lines of file
+				var lines = matrixText.split("\n");
+			
+				// For the header line, remove starting and trailing whitespace
+				lines[0] = lines[0].trim();
+			
+				// Split the line by whitespace
+				var IDs = lines[0].split(/[ \t]+/);
+			
+				// Remove the first element of the header line - "trees"
+				if (IDs[0] === "trees"){
+					IDs.splice(0,1);	// Removes first element
+				}
+			
+				// Create nodes element and add it to dataset
+				var nodes = [];
+				for (var i = 0; i < IDs.length; i++){
+					var newNode = { name: IDs[i] };
+					nodes.push(newNode);
+				}
+				dataset.nodes = nodes;
+			
+				// Then parse additional lines to populate edges
+				var edges = [];
+				for (var lineNum = 2; lineNum < lines.length; lineNum++){
+					lines[lineNum] = lines[lineNum].trim();
+					var covs = lines[lineNum].split(/[ \t]+/);
+					covs.splice(0,1);
+					covs.splice(covs.length-1,1);
+					for (var cov = 0; cov < covs.length; cov++){
+						var newEdge = {};
+						newEdge.source = lineNum - 1;
+						newEdge.target = cov;
+						newEdge.weight = covs[cov];
+						edges.push(newEdge);
+					}
+				}
+				dataset.edges = edges;
+			}
+		
+			// Creates the default network of only two equally frequent 5-taxon trees.
+			
+			dataset = {
+		
+				// 5-taxon bipartition descriptions
+		
+				nodes:[
+					{ name: "OA|BCD" },
+					{ name: "OB|ACD" },
+					{ name: "OC|ABD" },
+					{ name: "OD|ABC" },
+					{ name: "AB|OCD" },
+					{ name: "AC|OBD" },
+					{ name: "AD|OBC" },
+					{ name: "BC|OAD" },
+					{ name: "BD|OAC" },
+					{ name: "CD|OAB" },
+				],
+			
+				// Edges between all bipartitions, with weights as covariances from the 
+				// example tree set.
+			
+				edges: [	
+					{ source: 0, target: 1, weight: 0.0 },		// 1
+					{ source: 0, target: 2, weight: 0.0 },		// 2
+					{ source: 0, target: 3, weight: 0.0 },		// 3
+					{ source: 0, target: 4, weight: 0.0 },		// 4
+					{ source: 0, target: 5, weight: 0.0 },		// 5
+					{ source: 0, target: 6, weight: -0.25 },	// 6
+					{ source: 0, target: 7, weight: -0.25 },	// 7
+					{ source: 0, target: 8, weight: 0.0 },		// 8
+					{ source: 0, target: 9, weight: 0.25 },		// 9
+					{ source: 1, target: 2, weight: 0.0 },		// 10
+					{ source: 1, target: 3, weight: 0.0 },		// 11
+					{ source: 1, target: 4, weight: 0.0 },		// 12
+					{ source: 1, target: 5, weight: 0.0 },		// 13
+					{ source: 1, target: 6, weight: 0.0 },		// 14
+					{ source: 1, target: 7, weight: 0.0 },		// 15
+					{ source: 1, target: 8, weight: 0.0 },		// 16
+					{ source: 1, target: 9, weight: 0.0 },		// 17
+					{ source: 2, target: 3, weight: 0.0 },		// 18
+					{ source: 2, target: 4, weight: 0.0 },		// 19
+					{ source: 2, target: 5, weight: 0.0 },		// 20
+					{ source: 2, target: 6, weight: 0.0 },		// 21
+					{ source: 2, target: 7, weight: 0.0 },		// 22
+					{ source: 2, target: 8, weight: 0.0 },		// 23
+					{ source: 2, target: 9, weight: 0.0 },		// 24
+					{ source: 3, target: 4, weight: 0.0 },		// 25
+					{ source: 3, target: 5, weight: 0.0 },		// 26
+					{ source: 3, target: 6, weight: 0.0 },		// 27
+					{ source: 3, target: 7, weight: 0.0 },		// 28
+					{ source: 3, target: 8, weight: 0.0 },		// 29
+					{ source: 3, target: 9, weight: 0.0 },		// 30
+					{ source: 4, target: 5, weight: 0.0 },		// 31
+					{ source: 4, target: 6, weight: 0.0 },		// 32
+					{ source: 4, target: 7, weight: 0.0 },		// 33
+					{ source: 4, target: 8, weight: 0.0 },		// 34
+					{ source: 4, target: 9, weight: 0.0 },		// 35
+					{ source: 5, target: 6, weight: 0.0 },		// 36
+					{ source: 5, target: 7, weight: 0.0 },		// 37
+					{ source: 5, target: 8, weight: 0.0 },		// 38
+					{ source: 5, target: 9, weight: 0.0 },		// 39
+					{ source: 6, target: 7, weight: 0.25 },		// 40
+					{ source: 6, target: 8, weight: 0.0 },		// 41
+					{ source: 6, target: 9, weight: -0.25 },	// 42
+					{ source: 7, target: 8, weight: 0.0 },		// 43
+					{ source: 7, target: 9, weight: -0.25 },	// 44
+					{ source: 8, target: 9, weight: 0.0 },		// 45
+				]
+			}
+		
+			// Function to plot the network on a new or an existing svg
+			
+			var plotNetwork = function( svg = null,		// by default, no existing svg is provided
+										w = 600,		// svg width
+										h = 600,		// svg height
+										r = 3,			// node radius
+										edgeScaling = 5.5,	// Scaling factor for edge width display
+										edgeForceScaling = 0,	// Scaling factor for force of weighted edges (turned off by default)
+										nodeForceScaling = -100){	// Scaling factor for repelling force of nodes (low, by default)
+			
+				// Creating the svg to hold the covariance network
+				if (svg === null){
+					svg = d3.select("body")
+							.append("svg")
+							.attr("width",w)
+							.attr("height",h);
+				}
+		
+				// Setting up the force simulation to arrange nodes in the covariance network
+				var force = d3.forceSimulation(dataset.nodes)
+					  .force("charge", d3.forceManyBody().strength(nodeForceScaling))
+					  .force("link", d3.forceLink(dataset.edges).strength(function(d){
+							// return (Math.abs(d.weight) * edgeForceScaling)+0.01
+							return (d.weight * edgeForceScaling)+0.01
+					  }))
+					  .force("center", d3.forceCenter().x(w/2).y(h/2));
+		
+				// Define plotting parameters for covariance edges
+				var edges = svg.selectAll("line")
+								.data(dataset.edges)
+								.enter()
+								.append("line")
+								.style("stroke", function(d){
+									if (d.weight > 0){			// + covariances
+										return posEdgeColor;
+									} else if (d.weight < 0){	// - covariances
+										return negEdgeColor;
+									}							// Ignores edges with 0 weights
+								})
+								.style("stroke-width", function(d){	// Edge weights proportional to magnitude of covariance
+									return Math.abs(d.weight) * edgeScaling
+								});
+		        
+		        if (nodeStyle == "circles"){
+				    // Define plotting parameters for bipartition nodes
+				    var nodes = svg.selectAll("circle")
+							       .data(dataset.nodes)
+							       .enter()
+							       .append("circle")
+							       .attr("r", r)
+							       .style("fill",function(d,i){
+									     return nodeColor;
+							        })
+							        .call(d3.drag()  					//Define what to do on drag events
+										    .on("start", dragStarted)
+										    .on("drag", dragging)
+										    .on("end", dragEnded));        
+                } else if (nodeStyle == "numbers"){
+				    var nodes = svg.selectAll("text")
+							       .data(dataset.nodes)
+							       .enter()
+							       .append("text")
+							       .text(function(d,i){
+									     return d.name;
+							        })
+							        .call(d3.drag()  					//Define what to do on drag events
+										    .on("start", dragStarted)
+										    .on("drag", dragging)
+										    .on("end", dragEnded));        
+                }
+
+				// Next 3 functions define behavior of node dragging
+				function dragStarted(d) {
+					if (!d3.event.active) force.alphaTarget(0.3).restart();
+					d.fx = d.x;
+					d.fy = d.y;
+				}
+
+				function dragging(d) {
+					d.fx = d3.event.x;
+					d.fy = d3.event.y;
+				}
+
+				function dragEnded(d) {
+					if (!d3.event.active) force.alphaTarget(0);
+					d.fx = null;
+					d.fy = null;
+				}
+		
+				// Tooltip for nodes to show node description
+				// For default TreeScaper matrices, these are just indices
+				nodes.append("title")
+					 .text(function(d) {
+						  return d.name;
+					  });
+
+				// Tooltip for edges to show edge weights (covariances or affinities)
+				edges.append("title")
+					 .text(function(d) {
+						  return d.weight;
+					 });
+
+				// Defining behavior of nodes and edges during physical simulation
+				force.on("tick", function() {
+					edges.attr("x1", function(d) { return d.source.x; })
+						 .attr("y1", function(d) { return d.source.y; })
+						 .attr("x2", function(d) { return d.target.x; })
+						 .attr("y2", function(d) { return d.target.y; });
+                    
+                    if (nodeStyle == "circles"){
+					    nodes.attr("cx", function(d) { return d.x; })
+						     .attr("cy", function(d) { return d.y; });
+					} else if (nodeStyle == "numbers"){
+					    nodes.attr("x", function(d) { return d.x; })
+						     .attr("y", function(d) { return d.y; });
+					}
+				});
+			
+				// Adds a scale bar with a default value of 0.1 in the bottom-right corner
+				svg.append("line")
+				   .attr("x1",w-50)
+				   .attr("x2",w-100)
+				   .attr("y1",h-100)
+				   .attr("y2",h-100)
+				   .attr("stroke","black")
+				   .attr("stroke-width",edgeScaling * 0.1);
+			}
+		
+			// Initial display of default network
+			plotNetwork();
+			
+		</script>
+		
+		<br>
+		Choose the covariance (bipartition) or affinity (tree) matrix from TreeScaper you wish to display.<br><br>
+		
+		<!--  Input selection for file containing network -->
+		<input type="file" id="input" class="fileIn" onchange="handleFiles(this.files)"><br><br>
+		
+		Adjust the display of the network using the controls. Notes and description of these options are provided below.<br><br>
+    	
+    	<!-- Dropdown menu to change node color -->
+    	<!-- Functions called by all color dropdown menus are defined above -->
+    	<div class="dropdown">
+		  <button onclick="toggleNodeColorDropdown()" class="dropbtn">Node Color</button>
+		  <div id="nodeColor" class="dropdown-content">
+			<a onclick="changeNodeColorRed()">Red</a>
+			<a onclick="changeNodeColorOrange()">Orange</a>
+			<a onclick="changeNodeColorBlue()">Blue</a>
+			<a onclick="changeNodeColorGreen()">Green</a>
+			<a onclick="changeNodeColorGrey()">Grey</a>
+			<a onclick="changeNodeColorBlack()">Black</a>
+		  </div>
+		</div>
+		  
+		<!-- Dropdown menu to change the color of positive edges -->
+		<div class="dropdown">  
+		  <button onclick="togglePosEdgeColorDropdown()" class="dropbtn">Edge Color (Positive Weights)</button>
+		  <div id="posEdgeColor" class="dropdown-content">
+			<a onclick="changePosEdgeColorRed()">Red</a>
+			<a onclick="changePosEdgeColorOrange()">Orange</a>
+			<a onclick="changePosEdgeColorBlue()">Blue</a>
+			<a onclick="changePosEdgeColorGreen()">Green</a>
+			<a onclick="changePosEdgeColorGrey()">Grey</a>
+			<a onclick="changePosEdgeColorBlack()">Black</a>
+		  </div>
+		</div>
+
+		<!-- Dropdown menu to change the color of negative edges -->
+		<div class="dropdown">  
+		  <button onclick="toggleNegEdgeColorDropdown()" class="dropbtn">Edge Color (Negative Weights)</button>
+		  <div id="negEdgeColor" class="dropdown-content">
+			<a onclick="changeNegEdgeColorRed()">Red</a>
+			<a onclick="changeNegEdgeColorOrange()">Orange</a>
+			<a onclick="changeNegEdgeColorBlue()">Blue</a>
+			<a onclick="changeNegEdgeColorGreen()">Green</a>
+			<a onclick="changeNegEdgeColorGrey()">Grey</a>
+			<a onclick="changeNegEdgeColorBlack()">Black</a>
+		  </div>
+		</div>
+			
+		<div class="dropdown">
+          <button onclick="toggleNodeCirclesNumbers()" class="dropbtn">Node Style</button>
+          <div id="nodeCircleNum" class="dropdown-content">
+            <a onclick="changeNodesToCircles()">Circles</a>
+            <a onclick="changeNodesToNumbers()">Numbers</a>
+          </div>
+		</div>
+
+    	<br><br>
+    	
+    	<!-- Input slider for node radius -->
+    	<label for="nodeRadius" 
+		style="display: inline-block; width: 150px; text-align: center">
+		Node Radius <span id="nodeRadius-value"></span>
+		</label>
+		<input type="range" min="0" max="10" id="nodeRadius" step="0.1" value="3">
+		<br><br>
+    	
+    	<!-- Input slider for fine-grained control of edge thicknesses (scales edge weights) -->
+		<label for="fineEdgeScaling" 
+		style="display: inline-block; width: 150px; text-align: center">
+		Edge Weight Scaling (Fine Control) <span id="fineEdgeScaling-value"></span>
+		</label>
+		<input type="range" min="0" max="1" id="fineEdgeScaling" step="0.01" value="0.5">
+		<br><br>
+
+		<!-- Input slider for rough control of edge thicknesses (scales edge weights) -->
+		<label for="grossEdgeScaling" 
+		style="display: inline-block; width: 150px; text-align: center">
+		Edge Weight Scaling (Gross Control) <span id="grossEdgeScaling-value"></span>
+		</label>
+		<input type="range" min="0" max="25" id="grossEdgeScaling" step="0.5" value="5">
+		<br><br>
+	
+		<!-- Input slider to modulate the force of weighted edges -->
+		<!-- Positive edges attract and negative edges repel -->
+		<label for="edgeForceScaling" 
+		style="display: inline-block; width: 150px; text-align: center">
+		Edge Force Scaling <span id="edgeForceScaling-value"></span>
+		</label>
+		<input type="range" min="0" max="0.3" id="edgeForceScaling" step="0.01" value="0">
+		<br><br>
+
+		<!-- Input slider to modulate the repelling force of nodes -->
+		<label for="nodeForceScaling" 
+		style="display: inline-block; width: 150px; text-align: center">
+		Node Force Scaling <span id="nodeForceScaling-value"></span>
+		</label>
+		<input type="range" min="100" max="1500" id="nodeForceScaling" step="10" value="100">
+		<br><br>
+		
+		
+		<script>
+		
+			/* When the user clicks on the button, 
+			toggle between hiding and showing the dropdown content */
+			function toggleNodeColorDropdown() {
+				document.getElementById("nodeColor").classList.toggle("show");
+			}
+		
+			function togglePosEdgeColorDropdown() {
+				document.getElementById("posEdgeColor").classList.toggle("show");
+			}
+
+			function toggleNegEdgeColorDropdown() {
+				document.getElementById("negEdgeColor").classList.toggle("show");
+			}
+
+            function toggleNodeCirclesNumbers() {
+            	document.getElementById("nodeCircleNum").classList.toggle("show");
+            }
+
+			// Close the dropdown menu if the user clicks outside of it
+			window.onclick = function(event) {
+			  if (!event.target.matches('.dropbtn')) {
+
+				var dropdowns = document.getElementsByClassName("dropdown-content");
+				var i;
+				for (i = 0; i < dropdowns.length; i++) {
+				  var openDropdown = dropdowns[i];
+				  if (openDropdown.classList.contains('show')) {
+					openDropdown.classList.remove('show');
+				  }
+				}
+			  }
+			}
+
+			// Replotting the network when fine control of edge weights is changed
+			d3.select("#fineEdgeScaling")
+			  .on("input",function(){
+			  		refreshNetwork();
+			  })
+		
+			// Replotting the network when rough control of edge weights is changed
+			d3.select("#grossEdgeScaling")
+			  .on("input",function(){
+			  		refreshNetwork();
+			  })
+
+			// Replotting the network when the forces of edges are changed
+			d3.select("#edgeForceScaling")
+			  .on("input",function(){
+					refreshNetwork();
+			  })
+
+			// Replotting the network when the forces of nodes are changed
+			d3.select("#nodeForceScaling")
+			  .on("input",function(){
+					refreshNetwork();
+			  })
+
+			// Replotting the network when the radius of nodes is changed
+			d3.select("#nodeRadius")
+			  .on("input",function(){
+					refreshNetwork();
+			  })
+
+		</script>
+				
+		<h2> Notes </h2> 
+		
+		<p>
+		The position of nodes in the network can be changed interactively by clicking and dragging.
+		Depending on the size of the network, it may take some time to return to equilibrium. Changing
+		any of the options below may also perturb the network, requiring time for it to return to equilibrium.
+		</p>
+		
+		<p>
+		Network plots are created as SVGs. To export these figures, and allow editing in other software, try using 
+		<a href="https://nytimes.github.io/svg-crowbar/">SVG crowbar</a> in a Chrome browser.
+		</p>
+		
+		<p>
+		<i>Node Color</i> - Changes the color of the nodes, which are displayed as circles.
+		</p>
+		
+		<p>
+		<i>Edge Color (Positive Weights)</i> - Changes the color of edges whose weights are positive. 
+		Positively weighted edges pull nodes towards each other. By default, these edges are colored blue.
+		</p>
+		
+		<p>
+		<i>Edge Color (Negative Weights)</i> - Changes the color of edges whose weights are negative.
+		Negatively weighted edges repel nodes. By default, these edges are colored red.
+		</p>
+		
+		<p>
+		<i>Node Radius</i> - Changes the size of the circles that represent the nodes in the network.
+		The minimum is 0 and the maximum is 10 pixels.
+		</p>
+
+		<p>
+		<i>Edge Weight Scaling (Fine Control)</i> - In combination with the slider below (gross control), this slider
+		adjusts the width of lines representing edges in the network. The minimum value is 0 and the maximum is 1. Covariance
+		(bipartition) networks often have larger values and may require use of this control.
+		</p>
+		
+		<p>
+		<i>Edge Weight Scaling (Gross Control)</i> - In combination with the slider above (fine control), this slider 
+		adjusts the width of lines representing edges in the network. The minimum value is 0 and the maximum is 25. Affinity
+		(tree) networks often have smaller values and may require use of this control.
+		</p>
+
+		<p>
+		<i>Edge Force Scaling</i> - Adjusts the strength of attraction or repulsion provided by the edges. Edges with
+		positive weights attract, while those with negative weights repel.
+		</p>
+
+		<p>
+		<i>Node Force Scaling</i> - Adjusts the strength of repulsion among the nodes. The minimum is weak repulsion and 
+		the maximum is very strong repulsion.
+		</p>
+		
+    </body>
+</html>
