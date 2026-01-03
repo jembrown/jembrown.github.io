@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>5-Minute Countdown Timer</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #2ecc71; /* green */
+      color: white;
+      cursor: pointer;
+    }
+
+    #timer {
+      font-size: 20vw;
+      font-weight: bold;
+      line-height: 1;
+      user-select: none;
+    }
+
+    #reset {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      font-size: 16px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.8);
+      color: #333;
+      cursor: pointer;
+    }
+
+    #reset:hover {
+      background: rgba(255, 255, 255, 1);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="timer">5:00</div>
+  <button id="reset">Reset</button>
+
+  <script>
+    const START_TIME = 5 * 60;
+    let totalSeconds = START_TIME;
+    let interval = null;
+    let running = false;
+
+    const timerEl = document.getElementById("timer");
+    const resetBtn = document.getElementById("reset");
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    function updateBackground(seconds) {
+      if (seconds > 120) {
+        document.body.style.backgroundColor = "#2ecc71"; // green
+        document.body.style.color = "white";
+      } else if (seconds > 60) {
+        document.body.style.backgroundColor = "#f1c40f"; // yellow
+        document.body.style.color = "black";
+      } else {
+        document.body.style.backgroundColor = "#e74c3c"; // red
+        document.body.style.color = "white";
+      }
+    }
+
+    function start() {
+      if (running) return;
+
+      running = true;
+      interval = setInterval(() => {
+        totalSeconds--;
+        timerEl.textContent = formatTime(totalSeconds);
+        updateBackground(totalSeconds);
+
+        if (totalSeconds <= 0) {
+          pause();
+          timerEl.textContent = "0:00";
+        }
+      }, 1000);
+    }
+
+    function pause() {
+      running = false;
+      clearInterval(interval);
+      interval = null;
+    }
+
+    function toggle() {
+      if (running) {
+        pause();
+      } else {
+        start();
+      }
+    }
+
+    function reset() {
+      pause();
+      totalSeconds = START_TIME;
+      timerEl.textContent = formatTime(totalSeconds);
+      updateBackground(totalSeconds);
+    }
+
+    // Toggle start/pause on screen click
+    document.body.addEventListener("click", toggle);
+
+    // Prevent reset button from toggling timer
+    resetBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      reset();
+    });
+
+    // Initialize state
+    updateBackground(totalSeconds);
+  </script>
+
+</body>
+</html>
